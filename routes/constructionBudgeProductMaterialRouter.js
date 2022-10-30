@@ -11,7 +11,7 @@ const validateRoles = require("../middlewares/validateRoles");
 const Budge = require("../models/Budge");
 const Construction = require("../models/Construction");
 const Material = require("../models/Material");
-const MaterialProduct = require("../models/Material_Product");
+const MaterialProduct = require("../models/MaterialProduct");
 const Product = require("../models/Product");
 
 // CREATE MATERIAL PRODUCT
@@ -217,7 +217,7 @@ constructionBudgeProductMaterialRouter.delete(
       await material.update({
         status: false,
       });
-      
+
       await material.save();
 
       res.status(200).json(material);
