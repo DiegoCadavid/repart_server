@@ -71,7 +71,6 @@ constructionBudgeProductRouter.get(
   "/:construction_id/budge/:budge_id/product",
   [
     validateJWT,
-    validateRoles(["admin"]),
     existModelParam(Construction, "construction_id"),
     existModelParam(Budge, "budge_id"),
   ],
@@ -89,8 +88,8 @@ constructionBudgeProductRouter.get(
         });
       }
 
-      // Solo los dueños de la construccion pueden obtener los products
-      if (construction.create_by != authUser.id) {
+      // Solo los dueños y los cliente de la construccion pueden obtener los products
+      if (construction.create_by != authUser.id && construction.client_id != authUser.id) {
         return res.status(403).json({
           msg: "No permitido",
         });
@@ -118,7 +117,6 @@ constructionBudgeProductRouter.get(
   "/:construction_id/budge/:budge_id/product/:product_id",
   [
     validateJWT,
-    validateRoles(["admin"]),
     existModelParam(Construction, "construction_id"),
     existModelParam(Budge, "budge_id"),
     existModelParam(Product, "product_id"),
@@ -126,7 +124,14 @@ constructionBudgeProductRouter.get(
   ],
   async (req, res) => {
     try {
-      const {  product } = req;
+      const { construction, authUser,  product } = req;
+
+      // Solo los dueños o los clientes de la construccion pueden obtener los productos
+      if (construction.create_by != authUser.id && construction.client_id != authUser.id) {
+        return res.status(403).json({
+          msg: "No permitido",
+        });
+      }
 
       // Enviamos el producto
       res.status(200).json(product);
@@ -159,6 +164,13 @@ constructionBudgeProductRouter.put(
     try {
       const { product } = req;
 
+  // Solo los dueños o los clientes de la construccion pueden obtener el presupuesto
+  if (construction.create_by != authUser.id && construction.client_id != authUser.id) {
+    return res.status(403).json({
+      msg: "No permitido",
+    });
+  }
+
       // Creamos el producto en la base de datos
       await product.update(req.body);
       await product.save();
@@ -187,7 +199,14 @@ constructionBudgeProductRouter.delete(
   ],
   async (req, res) => {
     try {
-      const { product } = req;
+      const { authUser, construction,  product } = req;
+
+      // Solo los dueños de la construccion pueden editar el presupuesto
+      if ( construction.create_by != authUser.id  ) {
+        return res.status(403).json({
+          msg: "No permitido",
+        });
+      }
 
       // Elimiamos el producto
       await product.update({

@@ -25,8 +25,8 @@ constructionBudgeRouter.post(
       const { construction, authUser } = req;
       const { name } = req.body;
 
-      // Solo los dueños de la construccion pueden crear presupuestos
-      if (construction.create_by != authUser.id) {
+      // Solo los dueños y los clientes de la construccion pueden crear presupuestos
+      if (construction.create_by != authUser.id && construction.client_id != authUser.id) {
         return res.status(403).json({
           msg: "No permitido",
         });
@@ -69,8 +69,8 @@ constructionBudgeRouter.get(
         ],
       });
 
-      // Solo los dueños de la construccion pueden ver los presupuestos
-      if (construction.create_by != authUser.id) {
+      // Solo los dueños y los clientes de la construccion pueden ver los presupuestos
+      if (construction.create_by != authUser.id && construction.client_id != authUser.id) {
         return res.status(403).json({
           msg: "No permitido",
         });

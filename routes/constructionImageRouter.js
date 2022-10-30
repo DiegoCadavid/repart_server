@@ -164,6 +164,11 @@ constructionImageRouter.delete(
     try {
       const { construction, construction_image: constructionImage } = req;
 
+
+      // No se valida que solo los que crearon la construccion pueda subir imagenes
+      // a esta por temas de seguridad, es decir, si un trabajador sube una imagen
+      // innapropiada cualquier administrador pueda borrarla
+
       if (construction.id != constructionImage.construction_id) {
         return res.status(404).json({
           value: req.params.image_id,

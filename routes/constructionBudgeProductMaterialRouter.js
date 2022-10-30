@@ -30,7 +30,7 @@ constructionBudgeProductMaterialRouter.post(
   ],
   async (req, res) => {
     try {
-      const { product } = req;
+      const { product, authUser, construction } = req;
       const { material_id, amount } = req.body;
 
       // Verificamos si el material existe
@@ -39,6 +39,14 @@ constructionBudgeProductMaterialRouter.post(
           id: material_id,
         },
       });
+
+      // Solo los dueños de la construccion pueden agregar materiales de productos
+      if( construction.create_by != authUser.id ) {
+        return res.status(403).json({
+          msg: "No permitido",
+        });
+      }
+
 
       if (!material) {
         return res.status(400).json({
@@ -68,7 +76,6 @@ constructionBudgeProductMaterialRouter.get(
   "/:construction_id/budge/:budge_id/product/:product_id/material",
   [
     validateJWT,
-    validateRoles(["admin"]),
     existModelParam(Construction, "construction_id"),
     existModelParam(Budge, "budge_id"),
     existModelParam(Product, "product_id"),
@@ -76,7 +83,15 @@ constructionBudgeProductMaterialRouter.get(
   ],
   async (req, res) => {
     try {
-      const { product } = req;
+      const { product, construction, authUser } = req;
+
+        // Solo los dueños o clientes de la construccion pueden obtener materiales de productos
+        if( construction.create_by != authUser.id && construction.client_id != authUser.id ) {
+          return res.status(403).json({
+            msg: "No permitido",
+          });
+        }
+  
 
       const materialsProduct = await MaterialProduct.findAll({
         where: {
@@ -107,7 +122,6 @@ constructionBudgeProductMaterialRouter.get(
   "/:construction_id/budge/:budge_id/product/:product_id/material/:material_id",
   [
     validateJWT,
-    validateRoles(["admin"]),
     existModelParam(Construction, "construction_id"),
     existModelParam(Budge, "budge_id"),
     existModelParam(Product, "product_id"),
@@ -118,7 +132,14 @@ constructionBudgeProductMaterialRouter.get(
   ],
   async (req, res) => {
     try {
-      const { material_product: material, product } = req;
+      const { material_product: material, product, construction, authUser } = req;
+
+      // Solo los dueños o clientes de la construccion pueden obtener los materiales de productos
+      if (construction.create_by != authUser.id && construction.client_id != authUser.id) {
+        return res.status(403).json({
+          msg: "No permitido",
+        });
+      }
 
       // Si el material no coincide con el producto
       if (material.product_id != product.id) {
@@ -160,7 +181,14 @@ constructionBudgeProductMaterialRouter.put(
   ],
   async (req, res) => {
     try {
-      const { material_product: material, product } = req;
+      const { material_product: material, product, construction, authUser } = req;
+
+      // Solo los dueños de la construccion pueden editar los materiales de productos
+      if (construction.create_by != authUser.id) {
+        return res.status(403).json({
+          msg: "No permitido",
+        });
+      }
 
       // Si el material no coincide con el producto
       if (material.product_id != product.id) {
@@ -202,7 +230,14 @@ constructionBudgeProductMaterialRouter.delete(
   ],
   async (req, res) => {
     try {
-      const { material_product: material, product } = req;
+      const { material_product: material, product, construction, authUser } = req;
+
+      // Solo los dueños de la construccion pueden editar los materiales de productos
+      if (construction.create_by != authUser.id) {
+        return res.status(403).json({
+          msg: "No permitido",
+        });
+      }
 
       // Si el material no coincide con el producto
       if (material.product_id != product.id) {

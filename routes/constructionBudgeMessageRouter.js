@@ -84,7 +84,7 @@ constructionBudgeMessageRouter.get(
         });
       }
 
-      // Solo los dueños de la construccion pueden crear products
+      // Solo los dueños o clientes de la construccion pueden leer los mensajes
       if (
         construction.create_by != authUser.id &&
         construction.client_id != authUser.id
@@ -213,11 +213,8 @@ constructionBudgeMessageRouter.put(
         });
       }
 
-      // Solo los dueños o los clientes de la construccion pueden editar los mensajes
-      if (
-        construction.create_by != authUser.id &&
-        construction.client_id != authUser.id
-      ) {
+      // Solo los dueños de la construccion pueden editar los mensajes
+      if (construction.create_by != authUser.id) {
         return res.status(403).json({
           msg: "No permitido",
         });
@@ -245,7 +242,7 @@ constructionBudgeMessageRouter.delete(
     validateJWT,
     existModelParam(Construction, "construction_id"),
     existModelParam(Budge, "budge_id"),
-    existModelParam(BudgeMessage, "message_id")
+    existModelParam(BudgeMessage, "message_id"),
   ],
   async (req, res) => {
     try {
@@ -276,11 +273,8 @@ constructionBudgeMessageRouter.delete(
         });
       }
 
-      // Solo los dueños o los clientes de la construccion pueden editar los mensajes
-      if (
-        construction.create_by != authUser.id &&
-        construction.client_id != authUser.id
-      ) {
+      // Solo los dueños o los clientes de la construccion pueden eliminar los mensajes
+      if (construction.create_by != authUser.id) {
         return res.status(403).json({
           msg: "No permitido",
         });
@@ -288,7 +282,7 @@ constructionBudgeMessageRouter.delete(
 
       // Actualizamos el budgeMessage
       await budgeMessage.update({
-        status : false
+        status: false,
       });
       await budgeMessage.save();
 
