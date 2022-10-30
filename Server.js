@@ -26,6 +26,7 @@ class Server {
     this.app.use("/construction", require("./routes/constructionRouter"));
     this.app.use("/construction", require("./routes/constructionImageRouter"));
     this.app.use("/construction", require("./routes/constructionBudgeRouter"));
+    this.app.use("/construction", require("./routes/constructionBudgeProductRouter"));
 
     this.app.use('/material', require('./routes/materialRouter'));
   }
