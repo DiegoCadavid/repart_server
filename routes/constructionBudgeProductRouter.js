@@ -3,6 +3,7 @@ const constructionBudgeProductRouter = express.Router();
 const { body } = require("express-validator");
 
 const existModelParam = require("../middlewares/existModelParam");
+const validateConstructionBudgeProduct = require("../middlewares/validateConstructionBudgeProduct");
 const validateErrors = require("../middlewares/validateErrors");
 const validateJWT = require("../middlewares/validateJWT");
 const validateRoles = require("../middlewares/validateRoles");
@@ -29,6 +30,7 @@ constructionBudgeProductRouter.post(
       const { construction, budge, authUser } = req;
       const { name, labor_cost, unit_type } = req.body;
 
+      // Validamos si el presupuesto si le pertenece a esa construccion
       if (construction.id != budge.construction_id) {
         return res.status(404).json({
           value: req.params.budge_id,
@@ -77,6 +79,7 @@ constructionBudgeProductRouter.get(
     try {
       const { construction, budge, authUser } = req;
 
+      // Validamos si ese presupuesto si le pertence a esa construccion
       if (construction.id != budge.construction_id) {
         return res.status(404).json({
           value: req.params.budge_id,
@@ -119,36 +122,11 @@ constructionBudgeProductRouter.get(
     existModelParam(Construction, "construction_id"),
     existModelParam(Budge, "budge_id"),
     existModelParam(Product, "product_id"),
+    validateConstructionBudgeProduct
   ],
   async (req, res) => {
     try {
-      const { construction, budge, product, authUser } = req;
-
-      if (construction.id != budge.construction_id) {
-        return res.status(404).json({
-          value: req.params.budge_id,
-          msg: "el budge no fue encontrado",
-          param: "budge_id",
-          location: "params",
-        });
-      }
-
-      // Solo los dueños de la construccion pueden obtener el producto
-      if (construction.create_by != authUser.id) {
-        return res.status(403).json({
-          msg: "No permitido",
-        });
-      }
-
-      // Verificamos si el producto si le corresponde a ese presupuesto
-      if (product.budge_id != budge.id) {
-        return res.status(404).json({
-          value: req.params.budge_id,
-          msg: "el product no fue encontrado",
-          param: "product_id",
-          location: "params",
-        });
-      }
+      const {  product } = req;
 
       // Enviamos el producto
       res.status(200).json(product);
@@ -171,6 +149,7 @@ constructionBudgeProductRouter.put(
     existModelParam(Construction, "construction_id"),
     existModelParam(Budge, "budge_id"),
     existModelParam(Product, "product_id"),
+    validateConstructionBudgeProduct,
     body("name").optional().isString().isLength({ min: 3, max: 255 }),
     body("labor_cost").optional().isFloat(),
     body("unit_type").optional().isString(),
@@ -178,33 +157,7 @@ constructionBudgeProductRouter.put(
   ],
   async (req, res) => {
     try {
-      const { construction, budge, authUser, product } = req;
-
-      if (construction.id != budge.construction_id) {
-        return res.status(404).json({
-          value: req.params.budge_id,
-          msg: "el budge no fue encontrado",
-          param: "budge_id",
-          location: "params",
-        });
-      }
-
-      // Verificamos si el producto si le corresponde a ese presupuesto
-      if (product.budge_id != budge.id) {
-        return res.status(404).json({
-          value: req.params.budge_id,
-          msg: "el product no fue encontrado",
-          param: "product_id",
-          location: "params",
-        });
-      }
-
-      // Solo los dueños de la construccion pueden edtir el producto
-      if (construction.create_by != authUser.id) {
-        return res.status(403).json({
-          msg: "No permitido",
-        });
-      }
+      const { product } = req;
 
       // Creamos el producto en la base de datos
       await product.update(req.body);
@@ -230,36 +183,11 @@ constructionBudgeProductRouter.delete(
     existModelParam(Construction, "construction_id"),
     existModelParam(Budge, "budge_id"),
     existModelParam(Product, "product_id"),
+    validateConstructionBudgeProduct
   ],
   async (req, res) => {
     try {
-      const { construction, budge, authUser, product } = req;
-
-      if (construction.id != budge.construction_id) {
-        return res.status(404).json({
-          value: req.params.budge_id,
-          msg: "el budge no fue encontrado",
-          param: "budge_id",
-          location: "params",
-        });
-      }
-
-      // Verificamos si el producto si le corresponde a ese presupuesto
-      if (product.budge_id != budge.id) {
-        return res.status(404).json({
-          value: req.params.budge_id,
-          msg: "el product no fue encontrado",
-          param: "product_id",
-          location: "params",
-        });
-      }
-
-      // Solo los dueños de la construccion pueden eliminar el producto
-      if (construction.create_by != authUser.id) {
-        return res.status(403).json({
-          msg: "No permitido",
-        });
-      }
+      const { product } = req;
 
       // Elimiamos el producto
       await product.update({
