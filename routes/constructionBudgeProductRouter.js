@@ -162,7 +162,7 @@ constructionBudgeProductRouter.put(
   ],
   async (req, res) => {
     try {
-      const { product } = req;
+      const { product, construction, authUser } = req;
 
   // Solo los dueños o los clientes de la construccion pueden obtener el presupuesto
   if (construction.create_by != authUser.id && construction.client_id != authUser.id) {

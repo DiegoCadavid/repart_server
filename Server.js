@@ -35,6 +35,9 @@ class Server {
     this.app.use("/construction", require("./routes/constructionBudgeItemRouter"));
     this.app.use("/construction", require("./routes/constructionBudgeProductRouter"));
     this.app.use("/construction", require("./routes/constructionBudgeProductMaterialRouter"));
+
+    this.app.use("/construction", require("./routes/constructionViewRouter"));
+
   }
 
   async connectDB() {
