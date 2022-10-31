@@ -197,7 +197,7 @@ constructionBudgeItemRouter.get(
       }
 
       // Validamos si la categoria le pertgenece a ese presupuesto
-      if (budge.construction_id != category.budge_id) {
+      if (budge.id != category.budge_id) {
         return res.status(404).json({
           value: req.params.category_id,
           msg: "el category_item no fue encontrado",
@@ -275,7 +275,7 @@ constructionBudgeItemRouter.put(
       }
 
       // Validamos si la categoria le pertgenece a ese presupuesto
-      if (budge.construction_id != category.budge_id) {
+      if (budge.id != category.budge_id) {
         return res.status(404).json({
           value: req.params.category_id,
           msg: "el category_item no fue encontrado",
@@ -353,7 +353,7 @@ constructionBudgeItemRouter.delete(
       }
 
       // Validamos si la categoria le pertgenece a ese presupuesto
-      if (budge.construction_id != category.budge_id) {
+      if (budge.id != category.budge_id) {
         return res.status(404).json({
           value: req.params.category_id,
           msg: "el category_item no fue encontrado",
