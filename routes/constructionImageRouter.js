@@ -46,7 +46,9 @@ constructionImageRouter.post(
       // Subimos la imagen a cloudinary
       cloudinary.uploader
         .upload_stream(
-          { folder: `constructions/${construction.id}` },
+          {
+            folder: `${process.env.CLOUDINARY_ROOT}/constructions/${construction.id}`,
+          },
           async (error, result) => {
             if (error) {
               console.log(error);
@@ -90,23 +92,35 @@ constructionImageRouter.get(
         where: {
           status: true,
           construction_id: construction.id,
-          status: 1,
         },
       });
 
-      let constructionImagesWithUrl = [];
-      for (let i = 0; i < constructionImages.length; i++) {
-        const constructionImage = constructionImages[i];
-        const constructionImageUrl = await cloudinary.api.resource(
-          constructionImage.dataValues.image
-        );
-        constructionImagesWithUrl.push({
-          url: constructionImageUrl.secure_url,
-          ...constructionImage.dataValues,
-        });
+      if (constructionImages.length == 0) {
+        return res.status(200).json([]);
       }
 
-      res.status(200).json(constructionImagesWithUrl);
+      // Obtenemos todas las imagenes mediante el ID
+      const imagesUrl = await cloudinary.api.resources_by_ids(
+        constructionImages.map((image) => image.dataValues.image)
+      );
+
+      // Creamos el array de images con su respectiva url
+      const imagesWithUrl = constructionImages.map((image) => {
+        const url =
+          imagesUrl.resources[
+            imagesUrl.resources
+              .map((rm) => rm.public_id)
+              .findIndex((m) => m == image.image)
+          ].secure_url;
+
+        return {
+          url,
+          ...image.dataValues,
+        };
+      });
+
+      // Enviamos la peticion
+      res.status(200).json(imagesWithUrl);
     } catch (error) {
       console.log(error);
 
@@ -129,10 +143,11 @@ constructionImageRouter.get(
   ],
   async (req, res) => {
     try {
-      const { construction, construction_image: constructionImage } = req;
+      const { construction_image: constructionImage } = req;
 
       const urlImage = (await cloudinary.api.resource(constructionImage.image))
         .secure_url;
+
       res.status(200).json({
         url: urlImage,
         ...constructionImage.dataValues,
