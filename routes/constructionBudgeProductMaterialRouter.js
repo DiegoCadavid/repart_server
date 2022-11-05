@@ -1,6 +1,8 @@
 const express = require("express");
 const constructionBudgeProductMaterialRouter = express.Router();
 const { body } = require("express-validator");
+const compareAuthUser = require("../middlewares/compareAuthUser");
+const compareModels = require("../middlewares/compareModels");
 
 const existModelParam = require("../middlewares/existModelParam");
 const validateConstructionBudgeProduct = require("../middlewares/validateConstructionBudgeProduct");
@@ -24,13 +26,14 @@ constructionBudgeProductMaterialRouter.post(
     existModelParam(Budge, "budge_id"),
     existModelParam(Product, "product_id"),
     validateConstructionBudgeProduct,
+    compareAuthUser(Construction, ["create_by"]),
     body("material_id").exists().isInt(),
     body("amount").exists().isFloat(),
     validateErrors,
   ],
   async (req, res) => {
     try {
-      const { product, authUser, construction } = req;
+      const { product } = req;
       const { material_id, amount } = req.body;
 
       // Verificamos si el material existe
@@ -39,14 +42,6 @@ constructionBudgeProductMaterialRouter.post(
           id: material_id,
         },
       });
-
-      // Solo los dueños de la construccion pueden agregar materiales de productos
-      if( construction.create_by != authUser.id ) {
-        return res.status(403).json({
-          msg: "No permitido",
-        });
-      }
-
 
       if (!material) {
         return res.status(400).json({
@@ -80,18 +75,11 @@ constructionBudgeProductMaterialRouter.get(
     existModelParam(Budge, "budge_id"),
     existModelParam(Product, "product_id"),
     validateConstructionBudgeProduct,
+    compareAuthUser(Construction, ["create_by", "client_id"]),
   ],
   async (req, res) => {
     try {
-      const { product, construction, authUser } = req;
-
-        // Solo los dueños o clientes de la construccion pueden obtener materiales de productos
-        if( construction.create_by != authUser.id && construction.client_id != authUser.id ) {
-          return res.status(403).json({
-            msg: "No permitido",
-          });
-        }
-  
+      const { product } = req;
 
       const materialsProduct = await MaterialProduct.findAll({
         where: {
@@ -129,28 +117,15 @@ constructionBudgeProductMaterialRouter.get(
       { model: Material, as: "material" },
     ]),
     validateConstructionBudgeProduct,
+    compareModels(
+      { Model: Material, key: "product_id" },
+      { Model: Product, key: "id" }
+    ),
+    compareAuthUser(Construction, ["create_by", "client_id"]),
   ],
   async (req, res) => {
     try {
-      const { material_product: material, product, construction, authUser } = req;
-
-      // Solo los dueños o clientes de la construccion pueden obtener los materiales de productos
-      if (construction.create_by != authUser.id && construction.client_id != authUser.id) {
-        return res.status(403).json({
-          msg: "No permitido",
-        });
-      }
-
-      // Si el material no coincide con el producto
-      if (material.product_id != product.id) {
-        return res.status(404).json({
-          value: req.params.material_id,
-          msg: "el material_product no fue encontrado",
-          param: "material_id",
-          location: "params",
-        });
-      }
-
+      const { material_product: material } = req;
       res.status(200).json(material);
     } catch (error) {
       console.log(error);
@@ -175,30 +150,18 @@ constructionBudgeProductMaterialRouter.put(
       { model: Material, as: "material" },
     ]),
     validateConstructionBudgeProduct,
+    compareModels(
+      { Model: Material, key: "product_id" },
+      { Model: Product, key: "id" }
+    ),
+    compareAuthUser(Construction, ["create_by"]),
     body("material_id").optional().isInt(),
     body("amount").optional().isFloat(),
     validateErrors,
   ],
   async (req, res) => {
     try {
-      const { material_product: material, product, construction, authUser } = req;
-
-      // Solo los dueños de la construccion pueden editar los materiales de productos
-      if (construction.create_by != authUser.id) {
-        return res.status(403).json({
-          msg: "No permitido",
-        });
-      }
-
-      // Si el material no coincide con el producto
-      if (material.product_id != product.id) {
-        return res.status(404).json({
-          value: req.params.material_id,
-          msg: "el material_product no fue encontrado",
-          param: "material_id",
-          location: "params",
-        });
-      }
+      const { material_product: material } = req;
 
       await material.update(req.body);
       await material.save();
@@ -230,7 +193,12 @@ constructionBudgeProductMaterialRouter.delete(
   ],
   async (req, res) => {
     try {
-      const { material_product: material, product, construction, authUser } = req;
+      const {
+        material_product: material,
+        product,
+        construction,
+        authUser,
+      } = req;
 
       // Solo los dueños de la construccion pueden editar los materiales de productos
       if (construction.create_by != authUser.id) {

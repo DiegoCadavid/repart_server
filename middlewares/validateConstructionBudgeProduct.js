@@ -1,4 +1,5 @@
 /**
+ * [DEPRECATED] Usa en cambio "CompareModels"   
  * Realiza multiples validaciones para validar si el presupuesto si es dicha construccion,
  * si es el dueño de la construccion y si el producto si le corresponde a ese presupuesto
  */
