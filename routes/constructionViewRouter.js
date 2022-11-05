@@ -1,4 +1,6 @@
 const express = require("express");
+const compareAuthUser = require("../middlewares/compareAuthUser");
+const compareModels = require("../middlewares/compareModels");
 const existModelParam = require("../middlewares/existModelParam");
 const validateJWT = require("../middlewares/validateJWT");
 const Budge = require("../models/Budge");
@@ -16,30 +18,15 @@ constructionViewRouter.get(
     validateJWT,
     existModelParam(Construction, "construction_id"),
     existModelParam(Budge, "budge_id"),
+    compareModels(
+      { Model: Budge, key: "construction_id" },
+      { Model: Construction, key: id }
+    ),
+    compareAuthUser(Construction, ["client_id", "create_by"]),
   ],
   async (req, res) => {
     try {
-      const { authUser, construction, budge } = req;
-
-      // Validamos si al usuario autenticado si le pertenece la construccion
-      if (
-        authUser.id != construction.client_id &&
-        authUser.id != construction.create_by
-      ) {
-        return res.status(403).json({
-          msg: "No permitido",
-        });
-      }
-
-      // Validamos si la construccion coincide con la construccion del presupuesto
-      if (construction.id != budge.construction_id) {
-        return res.status(404).json({
-          value: req.params.budge_id,
-          msg: "el budge no fue encontrado",
-          param: "budge_id",
-          location: "params",
-        });
-      }
+      const { construction, budge } = req;
 
       // Obtenemos todas las categorias
       const categories = await CategoryItem.findAll({
@@ -163,30 +150,15 @@ constructionViewRouter.get(
     validateJWT,
     existModelParam(Construction, "construction_id"),
     existModelParam(Budge, "budge_id"),
+    compareModels(
+      { Model: Budge, key: "construction_id" },
+      { Model: Construction, key: "id" }
+    ),
+    compareAuthUser(Construction, ["create_by", "client_id"]),
   ],
   async (req, res) => {
     try {
-      const { authUser, construction, budge } = req;
-
-      // Validamos si al usuario autenticado si le pertenece la construccion
-      if (
-        authUser.id != construction.client_id &&
-        authUser.id != construction.create_by
-      ) {
-        return res.status(403).json({
-          msg: "No permitido",
-        });
-      }
-
-      // Validamos si la construccion coincide con la construccion del presupuesto
-      if (construction.id != budge.construction_id) {
-        return res.status(404).json({
-          value: req.params.budge_id,
-          msg: "el budge no fue encontrado",
-          param: "budge_id",
-          location: "params",
-        });
-      }
+      const { budge } = req;
 
       const rawProducts = await Product.findAll({
         where: {
