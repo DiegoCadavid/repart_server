@@ -20,7 +20,7 @@ constructionViewRouter.get(
     existModelParam(Budge, "budge_id"),
     compareModels(
       { Model: Budge, key: "construction_id" },
-      { Model: Construction, key: id }
+      { Model: Construction, key: "id" }
     ),
     compareAuthUser(Construction, ["client_id", "create_by"]),
   ],
