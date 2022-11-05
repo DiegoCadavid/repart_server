@@ -170,23 +170,18 @@ constructionImageRouter.delete(
     validateRoles(["admin"]),
     existModelParam(Construction, "construction_id"),
     existModelParam(ConstructionImage, "image_id"),
+    compareModels(
+      { Model: ConstructionImage, key: "construction_id" },
+      { Model: Construction, key: "id" }
+    ),
   ],
   async (req, res) => {
     try {
-      const { construction, construction_image: constructionImage } = req;
+      const { construction_image: constructionImage } = req;
 
       // No se valida que solo los que crearon la construccion pueda subir imagenes
       // a esta por temas de seguridad, es decir, si un trabajador sube una imagen
       // innapropiada cualquier administrador pueda borrarla
-
-      if (construction.id != constructionImage.construction_id) {
-        return res.status(404).json({
-          value: req.params.image_id,
-          msg: "el construction_image no fue encontrado",
-          param: "image_id",
-          location: "params",
-        });
-      }
 
       await constructionImage.update({
         status: false,
