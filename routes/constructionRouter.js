@@ -4,6 +4,7 @@ const constructionRouter = express.Router();
 // DEPENDENCES
 const { body } = require("express-validator");
 const { Op } = require("sequelize");
+const compareAuthUser = require("../middlewares/compareAuthUser");
 
 // MIDDLEWARES
 const existModelParam = require("../middlewares/existModelParam");
@@ -106,20 +107,11 @@ constructionRouter.get(
       { model: User, as: "client" },
       { model: User, as: "creator" },
     ]),
+    compareAuthUser(Construction, ["create_by", "client_id"]),
   ],
   async (req, res) => {
     try {
-      const { authUser, construction } = req;
-
-      // Solo esta autorizado a ver construcciones que ha creado o de las cuales es cliente
-      if (
-        construction.client_id != authUser.id &&
-        construction.create_by != authUser.id
-      ) {
-        return res.status(403).json({
-          msg: "No tienes acceso a esta construccion",
-        });
-      }
+      const { construction } = req;
 
       //Eliminamos la propiedad contraseña de los usuarios para no enviarla con la response
       delete construction.dataValues.creator.dataValues.password;
@@ -149,6 +141,7 @@ constructionRouter.put(
       { model: User, as: "creator" },
     ]),
     existUniqueModelFields(Construction, ["name"]),
+    compareAuthUser(Construction, ["create_by"]),
     body("client_id").optional().isInt(),
     body("name").optional().isString().isLength({ min: 3, max: 255 }),
     body("address").optional().isString().isLength({ max: 255 }),
@@ -157,13 +150,7 @@ constructionRouter.put(
   ],
   async (req, res) => {
     try {
-      const { authUser, construction } = req;
-
-      if (construction.create_by != authUser.id) {
-        return res.status(403).json({
-          msg: "No permitido",
-        });
-      }
+      const { construction } = req;
 
       await construction.update(req.body);
       await construction.save();
@@ -188,16 +175,11 @@ constructionRouter.delete(
       { model: User, as: "client" },
       { model: User, as: "creator" },
     ]),
+    compareAuthUser(Construction, ["create_by"]),
   ],
   async (req, res) => {
     try {
-      const { construction, authUser } = req;
-
-      if (authUser.id != construction.create_by && authUser.role != "admin") {
-        return res.status(403).json({
-          msg: "No permitido",
-        });
-      }
+      const { construction } = req;
 
       await construction.update({ status: false });
       await construction.save();
@@ -212,6 +194,5 @@ constructionRouter.delete(
     }
   }
 );
-
 
 module.exports = constructionRouter;
