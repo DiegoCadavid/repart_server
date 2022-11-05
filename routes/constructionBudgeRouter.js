@@ -7,7 +7,7 @@ const validateErrors = require("../middlewares/validateErrors");
 const validateJWT = require("../middlewares/validateJWT");
 const validateRoles = require("../middlewares/validateRoles");
 const compareModels = require("../middlewares/compareModels");
-const comapareAuthUser = require("../middlewares/compareAuthUser");
+const compareAuthUser = require("../middlewares/compareAuthUser");
 
 const Budge = require("../models/Budge");
 const Construction = require("../models/Construction");
@@ -19,23 +19,14 @@ constructionBudgeRouter.post(
     validateJWT,
     validateRoles(["admin"]),
     existModelParam(Construction, "construction_id"),
+    compareAuthUser(Construction, ["create_by"]),
     body("name").exists().isString().isLength({ min: 3, max: 255 }),
     validateErrors,
   ],
   async (req, res) => {
     try {
-      const { construction, authUser } = req;
+      const { construction } = req;
       const { name } = req.body;
-
-      // Solo los dueños y los clientes de la construccion pueden crear presupuestos
-      if (
-        construction.create_by != authUser.id &&
-        construction.client_id != authUser.id
-      ) {
-        return res.status(403).json({
-          msg: "No permitido",
-        });
-      }
 
       const budge = await Budge.create({
         name,
@@ -59,11 +50,11 @@ constructionBudgeRouter.get(
   [
     validateJWT,
     existModelParam(Construction, "construction_id"),
-    comapareAuthUser(Construction, ["create_by", "client_id"]),
+    compareAuthUser(Construction, ["create_by", "client_id"]),
   ],
   async (req, res) => {
     try {
-      const { construction, authUser } = req;
+      const { construction } = req;
 
       const budges = await Budge.findAll({
         where: {
@@ -102,17 +93,11 @@ constructionBudgeRouter.get(
       { Model: Budge, key: "construction_id" },
       { Model: Construction, key: "id" }
     ),
+    compareAuthUser(Construction, ["create_by", "client_id"]),
   ],
   async (req, res) => {
     try {
-      const { construction, budge, authUser } = req;
-
-      // Solo los dueños de la construccion pueden editar su presupuesto
-      if (construction.create_by != authUser.id) {
-        return res.status(403).json({
-          msg: "No permitido",
-        });
-      }
+      const { budge } = req;
 
       res.status(200).json(budge);
     } catch (error) {
@@ -135,28 +120,17 @@ constructionBudgeRouter.put(
     existModelParam(Budge, "budge_id", [
       { model: Construction, as: "construction" },
     ]),
+    compareModels(
+      { Model: Budge, key: "construction_id" },
+      { Model: Construction, key: "id" }
+    ),
+    compareAuthUser(Construction, ["create_by"]),
     body("name").optional().isString().isLength({ min: 3, max: 255 }),
     validateErrors,
   ],
   async (req, res) => {
     try {
-      const { construction, budge, authUser } = req;
-
-      if (construction.id != budge.construction_id) {
-        return res.status(404).json({
-          value: req.params.budge_id,
-          msg: "el budge no fue encontrado",
-          param: "budge_id",
-          location: "params",
-        });
-      }
-
-      // Solo los dueños de la construccion pueden editar su presupuesto
-      if (construction.create_by != authUser.id) {
-        return res.status(403).json({
-          msg: "No permitido",
-        });
-      }
+      const { budge } = req;
 
       await budge.update(req.body);
       await budge.save();
@@ -180,27 +154,16 @@ constructionBudgeRouter.delete(
     validateRoles(["admin"]),
     existModelParam(Construction, "construction_id"),
     existModelParam(Budge, "budge_id"),
+    compareModels(
+      { Model: Budge, key: "construction_id" },
+      { Model: Construction, key: "id" }
+    ),
+    compareAuthUser(Construction, ["create_by"]),
     validateErrors,
   ],
   async (req, res) => {
     try {
-      const { construction, budge, authUser } = req;
-
-      if (construction.id != budge.construction_id) {
-        return res.status(404).json({
-          value: req.params.budge_id,
-          msg: "el budge no fue encontrado",
-          param: "budge_id",
-          location: "params",
-        });
-      }
-
-      // Solo los dueños de la construccion pueden eliminar presupuestos
-      if (construction.create_by != authUser.id) {
-        return res.status(403).json({
-          msg: "No permitido",
-        });
-      }
+      const { budge } = req;
 
       await budge.update({
         status: false,
