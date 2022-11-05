@@ -1,6 +1,8 @@
 const express = require("express");
 const constructionBudgeItemRouter = express.Router();
 const { body } = require("express-validator");
+const compareAuthUser = require("../middlewares/compareAuthUser");
+const compareModels = require("../middlewares/compareModels");
 
 const existModelParam = require("../middlewares/existModelParam");
 const validateErrors = require("../middlewares/validateErrors");
@@ -22,42 +24,23 @@ constructionBudgeItemRouter.post(
     existModelParam(Construction, "construction_id"),
     existModelParam(Budge, "budge_id"),
     existModelParam(CategoryItem, "category_id"),
+    compareModels(
+      { Model: Budge, key: "construction_id" },
+      { Model: Construction, key: "id" }
+    ),
+    compareModels(
+      { Model: CategoryItem, key: "budge_id" },
+      { Model: Budge, key: "id" }
+    ),
+    compareAuthUser(Construction, ["create_by"]),
     body("amount").exists().isFloat(),
     body("product_id").exists().isInt(),
     validateErrors,
   ],
   async (req, res) => {
     try {
-      const { construction, budge, category_item: category, authUser } = req;
+      const { budge, category_item: category } = req;
       const { amount, product_id } = req.body;
-
-      // Validamos si el presupuesto si le pertenece a esa construccion
-      if (construction.id != budge.construction_id) {
-        return res.status(404).json({
-          value: req.params.budge_id,
-          msg: "el budge no fue encontrado",
-          param: "budge_id",
-          location: "params",
-        });
-      }
-
-      // Solo los dueños de la construccion pueden crear elementos
-      if (construction.create_by != authUser.id) {
-        return res.status(403).json({
-          msg: "No permitido",
-        });
-      }
-
-      // Validamos si la categoria le pertgenece a ese presupuesto
-      if (budge.id != category.budge_id) {
-        console.log(category.budge_id)
-        return res.status(404).json({
-          value: req.params.category_id,
-          msg: "el category_item no fue encontrado",
-          param: "category_id",
-          location: "params",
-        });
-      }
 
       // Verificamos si el producto existe
       const product = await Product.findOne({
@@ -101,27 +84,15 @@ constructionBudgeItemRouter.get(
     validateJWT,
     existModelParam(Construction, "construction_id"),
     existModelParam(Budge, "budge_id"),
+    compareModels(
+      { Model: Budge, key: "construction_id" },
+      { Model: Construction, key: "id" }
+    ),
+    compareAuthUser(Construction, ["create_by", "client_id"]),
   ],
   async (req, res) => {
     try {
-      const { construction, budge, category_item: category, authUser } = req;
-
-      // Validamos si el presupuesto si le pertenece a esa construccion
-      if (construction.id != budge.construction_id) {
-        return res.status(404).json({
-          value: req.params.budge_id,
-          msg: "el budge no fue encontrado",
-          param: "budge_id",
-          location: "params",
-        });
-      }
-
-      // Solo los dueños y clientes de la construccion pueden obtener elementos
-      if (construction.create_by != authUser.id && construction.client_id != authUser.id) {
-        return res.status(403).json({
-          msg: "No permitido",
-        });
-      }
+      const { budge } = req;
 
       // Buscamos el producto
       const items = await Item.findAll({
@@ -168,53 +139,23 @@ constructionBudgeItemRouter.get(
         as: "product",
       },
     ]),
+    compareModels(
+      { Model: Budge, key: "construction_id" },
+      { Model: Construction, key: "id" }
+    ),
+    compareModels(
+      { Model: CategoryItem, key: "budge_id" },
+      { Model: Budge, key: "id" }
+    ),
+    compareModels(
+      { Model: Item, key: "category_id" },
+      { Model: CategoryItem, key: "id" }
+    ),
+    compareAuthUser(Construction, ["create_by", "client_id"]),
   ],
   async (req, res) => {
     try {
-      const {
-        construction,
-        budge,
-        category_item: category,
-        authUser,
-        item,
-      } = req;
-
-      // Validamos si el presupuesto si le pertenece a esa construccion
-      if (construction.id != budge.construction_id) {
-        return res.status(404).json({
-          value: req.params.budge_id,
-          msg: "el budge no fue encontrado",
-          param: "budge_id",
-          location: "params",
-        });
-      }
-
-      // Solo los dueños y clientes de la construccion pueden obtener elementos
-      if (construction.create_by != authUser.id && construction.client_id != authUser.id) {
-        return res.status(403).json({
-          msg: "No permitido",
-        });
-      }
-
-      // Validamos si la categoria le pertgenece a ese presupuesto
-      if (budge.id != category.budge_id) {
-        return res.status(404).json({
-          value: req.params.category_id,
-          msg: "el category_item no fue encontrado",
-          param: "category_id",
-          location: "params",
-        });
-      }
-
-      // Validamos si el elemento pertenece a esa categoria
-      if (item.category_id != category.id) {
-        return res.status(404).json({
-          value: req.params.item_id,
-          msg: "el item no fue encontrado",
-          param: "item_id",
-          location: "params",
-        });
-      }
+      const { item } = req;
 
       // Enviamos una respuesta
       res.status(200).json(item);
@@ -243,56 +184,26 @@ constructionBudgeItemRouter.put(
         as: "product",
       },
     ]),
+    compareModels(
+      { Model: Budge, key: "construction_id" },
+      { Model: Construction, key: "id" }
+    ),
+    compareModels(
+      { Model: CategoryItem, key: "budge_id" },
+      { Model: Budge, key: "id" }
+    ),
+    compareModels(
+      { Model: Item, key: "category_id" },
+      { Model: CategoryItem, key: "id" }
+    ),
+    compareAuthUser(Construction, ["create_by"]),
     body("amount").optional().isFloat(),
     body("product_id").optional().isInt(),
     validateErrors,
   ],
   async (req, res) => {
     try {
-      const {
-        construction,
-        budge,
-        category_item: category,
-        authUser,
-        item,
-      } = req;
-
-      // Validamos si el presupuesto si le pertenece a esa construccion
-      if (construction.id != budge.construction_id) {
-        return res.status(404).json({
-          value: req.params.budge_id,
-          msg: "el budge no fue encontrado",
-          param: "budge_id",
-          location: "params",
-        });
-      }
-
-      // Solo los dueños de la construccion pueden crear elementos
-      if (construction.create_by != authUser.id) {
-        return res.status(403).json({
-          msg: "No permitido",
-        });
-      }
-
-      // Validamos si la categoria le pertgenece a ese presupuesto
-      if (budge.id != category.budge_id) {
-        return res.status(404).json({
-          value: req.params.category_id,
-          msg: "el category_item no fue encontrado",
-          param: "category_id",
-          location: "params",
-        });
-      }
-
-      // Validamos si el elemento pertenece a esa categoria
-      if (item.category_id != category.id) {
-        return res.status(404).json({
-          value: req.params.item_id,
-          msg: "el item no fue encontrado",
-          param: "item_id",
-          location: "params",
-        });
-      }
+      const { item } = req;
 
       await item.update(req.body);
       await item.save();
@@ -323,60 +234,30 @@ constructionBudgeItemRouter.delete(
         model: Product,
         as: "product",
       },
-    ])
+    ]),
+    compareModels(
+      { Model: Budge, key: "construction_id" },
+      { Model: Construction, key: "id" }
+    ),
+    compareModels(
+      { Model: CategoryItem, key: "budge_id" },
+      { Model: Budge, key: "id" }
+    ),
+    compareModels(
+      { Model: Item, key: "category_id" },
+      { Model: CategoryItem, key: "id" }
+    ),
+    compareAuthUser(Construction, ["create_by"]),
   ],
   async (req, res) => {
     try {
-      const {
-        construction,
-        budge,
-        category_item: category,
-        authUser,
-        item,
-      } = req;
-
-      // Validamos si el presupuesto si le pertenece a esa construccion
-      if (construction.id != budge.construction_id) {
-        return res.status(404).json({
-          value: req.params.budge_id,
-          msg: "el budge no fue encontrado",
-          param: "budge_id",
-          location: "params",
-        });
-      }
-
-      // Solo los dueños de la construccion pueden crear elementos
-      if (construction.create_by != authUser.id) {
-        return res.status(403).json({
-          msg: "No permitido",
-        });
-      }
-
-      // Validamos si la categoria le pertgenece a ese presupuesto
-      if (budge.id != category.budge_id) {
-        return res.status(404).json({
-          value: req.params.category_id,
-          msg: "el category_item no fue encontrado",
-          param: "category_id",
-          location: "params",
-        });
-      }
-
-      // Validamos si el elemento pertenece a esa categoria
-      if (item.category_id != category.id) {
-        return res.status(404).json({
-          value: req.params.item_id,
-          msg: "el item no fue encontrado",
-          param: "item_id",
-          location: "params",
-        });
-      }
+      const { item } = req;
 
       await item.update({
-        status: false
+        status: false,
       });
+      
       await item.save();
-
       // Enviamos una respuesta
       res.status(200).json(item);
     } catch (error) {
@@ -388,6 +269,5 @@ constructionBudgeItemRouter.delete(
     }
   }
 );
-
 
 module.exports = constructionBudgeItemRouter;
