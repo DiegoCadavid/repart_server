@@ -135,7 +135,7 @@ constructionBudgeProductRouter.put(
   ],
   async (req, res) => {
     try {
-      const { product, construction, authUser } = req;
+      const { product } = req;
 
       // Creamos el producto en la base de datos
       await product.update(req.body);
