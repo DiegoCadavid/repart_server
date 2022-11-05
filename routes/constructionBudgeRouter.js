@@ -6,6 +6,8 @@ const existModelParam = require("../middlewares/existModelParam");
 const validateErrors = require("../middlewares/validateErrors");
 const validateJWT = require("../middlewares/validateJWT");
 const validateRoles = require("../middlewares/validateRoles");
+const compareModels = require("../middlewares/compareModels");
+const comapareAuthUser = require("../middlewares/compareAuthUser");
 
 const Budge = require("../models/Budge");
 const Construction = require("../models/Construction");
@@ -26,7 +28,10 @@ constructionBudgeRouter.post(
       const { name } = req.body;
 
       // Solo los dueños y los clientes de la construccion pueden crear presupuestos
-      if (construction.create_by != authUser.id && construction.client_id != authUser.id) {
+      if (
+        construction.create_by != authUser.id &&
+        construction.client_id != authUser.id
+      ) {
         return res.status(403).json({
           msg: "No permitido",
         });
@@ -51,7 +56,11 @@ constructionBudgeRouter.post(
 // GET BUDGES
 constructionBudgeRouter.get(
   "/:construction_id/budge",
-  [validateJWT, existModelParam(Construction, "construction_id")],
+  [
+    validateJWT,
+    existModelParam(Construction, "construction_id"),
+    comapareAuthUser(Construction, ["create_by", "client_id"]),
+  ],
   async (req, res) => {
     try {
       const { construction, authUser } = req;
@@ -68,13 +77,6 @@ constructionBudgeRouter.get(
           },
         ],
       });
-
-      // Solo los dueños y los clientes de la construccion pueden ver los presupuestos
-      if (construction.create_by != authUser.id && construction.client_id != authUser.id) {
-        return res.status(403).json({
-          msg: "No permitido",
-        });
-      }
 
       res.status(200).json(budges);
     } catch (error) {
@@ -96,26 +98,21 @@ constructionBudgeRouter.get(
     existModelParam(Budge, "budge_id", [
       { model: Construction, as: "construction" },
     ]),
+    compareModels(
+      { Model: Budge, key: "construction_id" },
+      { Model: Construction, key: "id" }
+    ),
   ],
   async (req, res) => {
     try {
       const { construction, budge, authUser } = req;
 
-      if (construction.id != budge.construction_id) {
-        return res.status(404).json({
-          value: req.params.budge_id,
-          msg: "el budge no fue encontrado",
-          param: "budge_id",
-          location: "params",
+      // Solo los dueños de la construccion pueden editar su presupuesto
+      if (construction.create_by != authUser.id) {
+        return res.status(403).json({
+          msg: "No permitido",
         });
       }
-
-        // Solo los dueños de la construccion pueden editar su presupuesto
-        if (construction.create_by != authUser.id) {
-          return res.status(403).json({
-            msg: "No permitido",
-          });
-        }
 
       res.status(200).json(budge);
     } catch (error) {
