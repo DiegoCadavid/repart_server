@@ -52,7 +52,17 @@ materialRouter.get("/", async (req, res) => {
     const materials = await Material.findAll({
       where: {
         status: 1,
-      }
+      },
+      include: [
+        {
+          model: User,
+          as: "creator",
+        },
+      ],
+    });
+
+    materials.forEach((material) => {
+      delete material.dataValues.creator.dataValues.password;
     });
 
     res.status(200).json(materials);
@@ -66,18 +76,31 @@ materialRouter.get("/", async (req, res) => {
 });
 
 // GET MATERIAL BY ID
-materialRouter.get("/:id", [existModelParam(Material, "id")], (req, res) => {
-  try {
-    const { material } = req;
-    res.status(200).json(material);
-  } catch (error) {
-    console.log(error);
+materialRouter.get(
+  "/:id",
+  [
+    existModelParam(Material, "id", [
+      {
+        model: User,
+        as: "creator",
+      },
+    ]),
+  ],
+  (req, res) => {
+    try {
+      const { material } = req;
+      delete material.dataValues.creator.dataValues.password;
 
-    res.status(500).json({
-      msg: "Contacte con el administrador",
-    });
+      res.status(200).json(material);
+    } catch (error) {
+      console.log(error);
+
+      res.status(500).json({
+        msg: "Contacte con el administrador",
+      });
+    }
   }
-});
+);
 
 // UPDATE MATERIAL
 materialRouter.put(
@@ -85,7 +108,12 @@ materialRouter.put(
   [
     validateJWT,
     validateRoles(["admin"]),
-    existModelParam(Material, "id"),
+    existModelParam(Material, "id", [
+      {
+        model: User,
+        as: "creator",
+      },
+    ]),
     body("name").optional().isLength({ min: 3, max: 255 }),
     body("cost").optional().isFloat(),
     body("unit_type").optional().isString(),
@@ -101,6 +129,7 @@ materialRouter.put(
         ...materialValues,
       });
       material.save();
+      delete material.dataValues.creator.dataValues.password;
 
       res.status(200).json(material);
     } catch (error) {
@@ -115,7 +144,16 @@ materialRouter.put(
 
 materialRouter.delete(
   "/:id",
-  [validateJWT, validateRoles(["admin"]), existModelParam(Material, "id")],
+  [
+    validateJWT,
+    validateRoles(["admin"]),
+    existModelParam(Material, "id", [
+      {
+        model: User,
+        as: "creator",
+      },
+    ]),
+  ],
   async (req, res) => {
     try {
       const { material } = req;
@@ -125,9 +163,10 @@ materialRouter.delete(
       await material.update({
         status: false,
       });
-      
+
       await material.save();
 
+      delete material.dataValues.creator.dataValues.password;
       res.status(200).json(material);
     } catch (error) {
       console.log(error);
