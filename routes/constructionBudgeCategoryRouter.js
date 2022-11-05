@@ -11,6 +11,8 @@ const validateErrors = require("../middlewares/validateErrors");
 const Construction = require("../models/Construction");
 const Budge = require("../models/Budge");
 const CategoryItem = require("../models/CategoryItem");
+const compareModels = require("../middlewares/compareModels");
+const compareAuthUser = require("../middlewares/compareAuthUser");
 
 // CREAMOS CATEGORIA
 constructionBudgeCategoryRouter.post(
@@ -20,30 +22,18 @@ constructionBudgeCategoryRouter.post(
     validateRoles(["admin"]),
     existModelParam(Construction, "construction_id"),
     existModelParam(Budge, "budge_id"),
+    compareModels(
+      { Model: Construction, key: "id" },
+      { Model: Budge, key: "construction_id" }
+    ),
+    compareAuthUser(Construction, ["create_by"]),
     body("name").exists().isString().isLength({ min: 3, max: 255 }),
     validateErrors,
   ],
   async (req, res) => {
     try {
-      const { construction, budge, authUser } = req;
+      const { budge } = req;
       const { name } = req.body;
-
-      // Validamos si el presupuesto si le pertenece a esa construccion
-      if (construction.id != budge.construction_id) {
-        return res.status(404).json({
-          value: req.params.budge_id,
-          msg: "el budge no fue encontrado",
-          param: "budge_id",
-          location: "params",
-        });
-      }
-
-      // Solo los dueños de la construccion pueden crear categorias
-      if (construction.create_by != authUser.id) {
-        return res.status(403).json({
-          msg: "No permitido",
-        });
-      }
 
       // Creamos la categoria
       const category = await CategoryItem.create({
@@ -69,30 +59,15 @@ constructionBudgeCategoryRouter.get(
     validateJWT,
     existModelParam(Construction, "construction_id"),
     existModelParam(Budge, "budge_id"),
+    compareModels(
+      { Model: Construction, key: "id" },
+      { Model: Budge, key: "construction_id" }
+    ),
+    compareAuthUser(Construction, ["create_by", "client_id"]),
   ],
   async (req, res) => {
     try {
-      const { construction, budge, authUser } = req;
-
-      // Validamos si el presupuesto si le pertenece a esa construccion
-      if (construction.id != budge.construction_id) {
-        return res.status(404).json({
-          value: req.params.budge_id,
-          msg: "el budge no fue encontrado",
-          param: "budge_id",
-          location: "params",
-        });
-      }
-
-      // Solo los dueños y clientes de la construccion pueden leer categorias
-      if (
-        construction.create_by != authUser.id &&
-        construction.client_id != authUser.id
-      ) {
-        return res.status(403).json({
-          msg: "No permitido",
-        });
-      }
+      const { budge } = req;
 
       // Obtenemos las categorias
       const categories = await CategoryItem.findAll({
@@ -121,40 +96,19 @@ constructionBudgeCategoryRouter.get(
     existModelParam(Construction, "construction_id"),
     existModelParam(Budge, "budge_id"),
     existModelParam(CategoryItem, "category_id"),
+    compareModels(
+      { Model: Construction, key: "id" },
+      { Model: Budge, key: "construction_id" }
+    ),
+    compareModels(
+      { Model: CategoryItem, key: "budge_id" },
+      { Model: Budge, key: "id" }
+    ),
+    compareAuthUser(Construction, ["create_by", "client_id"]),
   ],
   async (req, res) => {
     try {
-      const { construction, budge, authUser, category_item: category } = req;
-
-      // Validamos si el presupuesto si le pertenece a esa construccion
-      if (construction.id != budge.construction_id) {
-        return res.status(404).json({
-          value: req.params.budge_id,
-          msg: "el budge no fue encontrado",
-          param: "budge_id",
-          location: "params",
-        });
-      }
-
-      // Solo los dueños y clientes de la construccion pueden leer categorias
-      if (
-        construction.create_by != authUser.id &&
-        construction.client_id != authUser.id
-      ) {
-        return res.status(403).json({
-          msg: "No permitido",
-        });
-      }
-
-      // Validamos si el presupuesto si le pertenece a esa construccion
-      if (budge.construction_id != category.budge_id) {
-        return res.status(404).json({
-          value: req.params.category_id,
-          msg: "el category_item no fue encontrado",
-          param: "category_id",
-          location: "params",
-        });
-      }
+      const { category_item: category } = req;
 
       res.status(200).json(category);
     } catch (error) {
@@ -175,39 +129,21 @@ constructionBudgeCategoryRouter.put(
     existModelParam(Construction, "construction_id"),
     existModelParam(Budge, "budge_id"),
     existModelParam(CategoryItem, "category_id"),
+    compareModels(
+      { Model: Construction, key: "id" },
+      { Model: Budge, key: "construction_id" }
+    ),
+    compareModels(
+      { Model: CategoryItem, key: "budge_id" },
+      { Model: Budge, key: "id" }
+    ),
+    compareAuthUser(Construction, ["create_by"]),
     body("name").optional().isString().isLength({ min: 3, max: 255 }),
     validateErrors,
   ],
   async (req, res) => {
     try {
-      const { construction, budge, authUser, category_item: category } = req;
-
-      // Validamos si el presupuesto si le pertenece a esa construccion
-      if (construction.id != budge.construction_id) {
-        return res.status(404).json({
-          value: req.params.budge_id,
-          msg: "el budge no fue encontrado",
-          param: "budge_id",
-          location: "params",
-        });
-      }
-
-      // Solo los dueños de la construccion pueden editar categorias
-      if (construction.create_by != authUser.id) {
-        return res.status(403).json({
-          msg: "No permitido",
-        });
-      }
-
-      // Validamos si el presupuesto si le pertenece a esa construccion
-      if (budge.construction_id != category.budge_id) {
-        return res.status(404).json({
-          value: req.params.category_id,
-          msg: "el category_item no fue encontrado",
-          param: "category_id",
-          location: "params",
-        });
-      }
+      const { category_item: category } = req;
 
       await category.update(req.body);
       await category.save();
@@ -223,49 +159,30 @@ constructionBudgeCategoryRouter.put(
   }
 );
 
-
 // Eliminamos la categoria
-constructionBudgeCategoryRouter.delete  (
+constructionBudgeCategoryRouter.delete(
   "/:construction_id/budge/:budge_id/category/:category_id",
   [
     validateJWT,
     existModelParam(Construction, "construction_id"),
     existModelParam(Budge, "budge_id"),
-    existModelParam(CategoryItem, "category_id")
+    existModelParam(CategoryItem, "category_id"),
+    compareModels(
+      { Model: Construction, key: "id" },
+      { Model: Budge, key: "construction_id" }
+    ),
+    compareModels(
+      { Model: CategoryItem, key: "budge_id" },
+      { Model: Budge, key: "id" }
+    ),
+    compareAuthUser(Construction, ["create_by"]),
   ],
   async (req, res) => {
     try {
-      const { construction, budge, authUser, category_item: category } = req;
-
-      // Validamos si el presupuesto si le pertenece a esa construccion
-      if (construction.id != budge.construction_id) {
-        return res.status(404).json({
-          value: req.params.budge_id,
-          msg: "el budge no fue encontrado",
-          param: "budge_id",
-          location: "params",
-        });
-      }
-
-      // Solo los dueños de la construccion pueden editar categorias
-      if (construction.create_by != authUser.id) {
-        return res.status(403).json({
-          msg: "No permitido",
-        });
-      }
-
-      // Validamos si el presupuesto si le pertenece a esa construccion
-      if (budge.construction_id != category.budge_id) {
-        return res.status(404).json({
-          value: req.params.category_id,
-          msg: "el category_item no fue encontrado",
-          param: "category_id",
-          location: "params",
-        });
-      }
+      const { category_item: category } = req;
 
       await category.update({
-        status: false
+        status: false,
       });
       await category.save();
 

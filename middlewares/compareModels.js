@@ -18,7 +18,7 @@ const compareModels = (firstModel = {}, secondModel = {}) => {
 
       if (firstReqModel[firstModel.key] != secondReqModel[secondModel.key]) {
         return res.status(403).json({
-          msg: `El ${firstModel.Model.name.toLowerCase()} No pertenece a esa ${secondModel.Model.name.toLowerCase()}`,
+          msg: `El ${firstModel.Model.name.toLowerCase()} no pertenece a esa ${secondModel.Model.name.toLowerCase()}`,
         });
       }
 

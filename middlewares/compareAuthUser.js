@@ -1,4 +1,4 @@
-const comapareAuthUser = (Model, keys = []) => {
+const compareAuthUser = (Model, keys = []) => {
   return (req, res, next) => {
     try {
       const { authUser } = req;
@@ -27,7 +27,7 @@ const comapareAuthUser = (Model, keys = []) => {
           msg: "No permitido",
         });
       }
-      
+
 
       next();
     } catch (error) {
@@ -40,4 +40,4 @@ const comapareAuthUser = (Model, keys = []) => {
   };
 };
 
-module.exports = comapareAuthUser;
+module.exports = compareAuthUser;
