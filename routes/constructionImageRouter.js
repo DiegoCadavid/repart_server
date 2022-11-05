@@ -1,4 +1,6 @@
 const express = require("express");
+const compareAuthUser = require("../middlewares/compareAuthUser");
+const compareModels = require("../middlewares/compareModels");
 const constructionImageRouter = express.Router();
 
 // DEPENDENCES
@@ -21,18 +23,12 @@ constructionImageRouter.post(
     validateJWT,
     validateRoles(["admin"]),
     existModelParam(Construction, "construction_id"),
+    compareAuthUser(Construction, ["create_by"]),
     validateErrors,
   ],
   (req, res) => {
     try {
-      const { construction, files, authUser } = req; // => De aqui sacamos el ID
-
-      // Solo los que crearon la obra pueden subir imagenes a esta
-      if (construction.create_by != authUser.id) {
-        return res.status(403).json({
-          msg: "no permitido",
-        });
-      }
+      const { construction, files } = req; // => De aqui sacamos el ID
 
       // Realizamos validaciones
       if (!files?.image) {
@@ -123,20 +119,17 @@ constructionImageRouter.get(
 
 constructionImageRouter.get(
   "/:construction_id/images/:image_id",
-  [existModelParam(Construction, "construction_id")],
-  [existModelParam(ConstructionImage, "image_id")],
+  [
+    existModelParam(Construction, "construction_id"),
+    existModelParam(ConstructionImage, "image_id"),
+    compareModels(
+      { Model: ConstructionImage, key: "construction_id" },
+      { Model: Construction, key: "id" }
+    ),
+  ],
   async (req, res) => {
     try {
       const { construction, construction_image: constructionImage } = req;
-
-      if (construction.id != constructionImage.construction_id) {
-        return res.status(404).json({
-          value: req.params.image_id,
-          msg: "el construction_image no fue encontrado",
-          param: "image_id",
-          location: "params",
-        });
-      }
 
       const urlImage = (await cloudinary.api.resource(constructionImage.image))
         .secure_url;
@@ -157,13 +150,15 @@ constructionImageRouter.get(
 // DELETE
 constructionImageRouter.delete(
   "/:construction_id/images/:image_id",
-  [validateJWT, validateRoles(["admin"])],
-  [existModelParam(Construction, "construction_id")],
-  [existModelParam(ConstructionImage, "image_id")],
+  [
+    validateJWT,
+    validateRoles(["admin"]),
+    existModelParam(Construction, "construction_id"),
+    existModelParam(ConstructionImage, "image_id"),
+  ],
   async (req, res) => {
     try {
       const { construction, construction_image: constructionImage } = req;
-
 
       // No se valida que solo los que crearon la construccion pueda subir imagenes
       // a esta por temas de seguridad, es decir, si un trabajador sube una imagen
