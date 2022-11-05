@@ -59,17 +59,19 @@ constructionRouter.post(
 // GET ALL CONSTRUCTIONS
 // Obtiene todas las construcciones del usuario autenticado
 constructionRouter.get(
-  "/",
-  [validateJWT, validateRoles(["admin", "client"])],
+  "/user/:user_id",
+  [existModelParam(User, "user_id")],
   async (req, res) => {
     try {
-      const { authUser } = req;
+      const { user } = req;
+
+      console.log(user.id);
 
       // Solo mostramos las construcciones que el usuario a creado o de las cuales es cliente
       const constructions = await Construction.findAll({
         where: {
           status: true,
-          [Op.or]: [{ create_by: authUser.id }, { client_id: authUser.id }],
+          [Op.or]: [{ create_by: user.id }, { client_id: user.id }],
         },
         include: [
           { model: User, as: "client" },
@@ -101,13 +103,10 @@ constructionRouter.get(
 constructionRouter.get(
   "/:id",
   [
-    validateJWT,
-    validateRoles(["admin", "client"]),
     existModelParam(Construction, "id", [
       { model: User, as: "client" },
       { model: User, as: "creator" },
     ]),
-    compareAuthUser(Construction, ["create_by", "client_id"]),
   ],
   async (req, res) => {
     try {
