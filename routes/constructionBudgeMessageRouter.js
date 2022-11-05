@@ -2,6 +2,8 @@ const express = require("express");
 const constructionBudgeMessageRouter = express.Router();
 
 const { body } = require("express-validator");
+const compareAuthUser = require("../middlewares/compareAuthUser");
+const compareModels = require("../middlewares/compareModels");
 
 const existModelParam = require("../middlewares/existModelParam");
 const validateErrors = require("../middlewares/validateErrors");
@@ -20,30 +22,18 @@ constructionBudgeMessageRouter.post(
     validateRoles(["admin"]),
     existModelParam(Construction, "construction_id"),
     existModelParam(Budge, "budge_id"),
+    compareModels(
+      { Model: Budge, key: "construction_id" },
+      { Model: Construction, key: "id" }
+    ),
+    compareAuthUser(Construction, ["create_by"]),
     body("message").isString().isLength({ min: 3, max: 255 }),
     validateErrors,
   ],
   async (req, res) => {
     try {
-      const { construction, budge, authUser } = req;
+      const { budge } = req;
       const { message } = req.body;
-
-      // Validamos si el presupuesto si le pertenece a esa construccion
-      if (construction.id != budge.construction_id) {
-        return res.status(404).json({
-          value: req.params.budge_id,
-          msg: "el budge no fue encontrado",
-          param: "budge_id",
-          location: "params",
-        });
-      }
-
-      // Solo los dueños de la construccion pueden crear products
-      if (construction.create_by != authUser.id) {
-        return res.status(403).json({
-          msg: "No permitido",
-        });
-      }
 
       // Creamos el mensaje de presupuesto
       const budgeMessage = await BudgeMessage.create({
@@ -69,30 +59,15 @@ constructionBudgeMessageRouter.get(
     validateJWT,
     existModelParam(Construction, "construction_id"),
     existModelParam(Budge, "budge_id"),
+    compareModels(
+      { Model: Budge, key: "construction_id" },
+      { Model: Construction, key: "id" }
+    ),
+    compareAuthUser(Construction, ["create_by", "client_id"]),
   ],
   async (req, res) => {
     try {
-      const { construction, budge, authUser } = req;
-
-      // Validamos si el presupuesto si le pertenece a esa construccion
-      if (construction.id != budge.construction_id) {
-        return res.status(404).json({
-          value: req.params.budge_id,
-          msg: "el budge no fue encontrado",
-          param: "budge_id",
-          location: "params",
-        });
-      }
-
-      // Solo los dueños o clientes de la construccion pueden leer los mensajes
-      if (
-        construction.create_by != authUser.id &&
-        construction.client_id != authUser.id
-      ) {
-        return res.status(403).json({
-          msg: "No permitido",
-        });
-      }
+      const { budge } = req;
 
       // Obtenemos todos los mensajes del presupuesto
       const budgeMessages = await BudgeMessage.findAll({
@@ -121,45 +96,19 @@ constructionBudgeMessageRouter.get(
     existModelParam(Construction, "construction_id"),
     existModelParam(Budge, "budge_id"),
     existModelParam(BudgeMessage, "message_id"),
+    compareModels(
+      { Model: Budge, key: "construction_id" },
+      { Model: Construction, key: "id" }
+    ),
+    compareModels(
+      { Model: BudgeMessage, key: "budge_id" },
+      { Model: Budge, key: "id" }
+    ),
+    compareAuthUser(Construction, ["create_by", "client_id"]),
   ],
   async (req, res) => {
     try {
-      const {
-        construction,
-        budge,
-        authUser,
-        budge_message: budgeMessage,
-      } = req;
-
-      // validamos si el presupuesto pertenece a la construccion
-      if (construction.id != budge.construction_id) {
-        return res.status(404).json({
-          value: req.params.budge_id,
-          msg: "el budge no fue encontrado",
-          param: "budge_id",
-          location: "params",
-        });
-      }
-
-      // Validamos si el mensaje  pertenece a ese presupuesto
-      if (budge.construction_id != budgeMessage.budge_id) {
-        return res.status(404).json({
-          value: req.params.message_id,
-          msg: "el budge_message no fue encontrado",
-          param: "message_id",
-          location: "params",
-        });
-      }
-
-      // Solo los dueños o los clientes de la construccion pueden leer los mensajes
-      if (
-        construction.create_by != authUser.id &&
-        construction.client_id != authUser.id
-      ) {
-        return res.status(403).json({
-          msg: "No permitido",
-        });
-      }
+      const { budge_message: budgeMessage } = req;
 
       // Enviamos la respuesta
       res.status(200).json(budgeMessage);
@@ -181,6 +130,15 @@ constructionBudgeMessageRouter.put(
     existModelParam(Construction, "construction_id"),
     existModelParam(Budge, "budge_id"),
     existModelParam(BudgeMessage, "message_id"),
+    compareModels(
+      { Model: Budge, key: "construction_id" },
+      { Model: Construction, key: "id" }
+    ),
+    compareModels(
+      { Model: BudgeMessage, key: "budge_id" },
+      { Model: Budge, key: "id" }
+    ),
+    compareAuthUser(Construction, ["create_by"]),
     body("message").optional().isLength({ min: 3, max: 255 }),
     validateErrors,
   ],
@@ -192,33 +150,6 @@ constructionBudgeMessageRouter.put(
         authUser,
         budge_message: budgeMessage,
       } = req;
-
-      // validamos si el presupuesto pertenece a la construccion
-      if (construction.id != budge.construction_id) {
-        return res.status(404).json({
-          value: req.params.budge_id,
-          msg: "el budge no fue encontrado",
-          param: "budge_id",
-          location: "params",
-        });
-      }
-
-      // Validamos si el mensaje  pertenece a ese presupuesto
-      if (budge.construction_id != budgeMessage.budge_id) {
-        return res.status(404).json({
-          value: req.params.message_id,
-          msg: "el budge_message no fue encontrado",
-          param: "message_id",
-          location: "params",
-        });
-      }
-
-      // Solo los dueños de la construccion pueden editar los mensajes
-      if (construction.create_by != authUser.id) {
-        return res.status(403).json({
-          msg: "No permitido",
-        });
-      }
 
       // Actualizamos el budgeMessage
       await budgeMessage.update(req.body);
@@ -243,42 +174,19 @@ constructionBudgeMessageRouter.delete(
     existModelParam(Construction, "construction_id"),
     existModelParam(Budge, "budge_id"),
     existModelParam(BudgeMessage, "message_id"),
+    compareModels(
+      { Model: Budge, key: "construction_id" },
+      { Model: Construction, key: "id" }
+    ),
+    compareModels(
+      { Model: BudgeMessage, key: "budge_id" },
+      { Model: Budge, key: "id" }
+    ),
+    compareAuthUser(Construction, ["create_by"]),
   ],
   async (req, res) => {
     try {
-      const {
-        construction,
-        budge,
-        authUser,
-        budge_message: budgeMessage,
-      } = req;
-
-      // validamos si el presupuesto pertenece a la construccion
-      if (construction.id != budge.construction_id) {
-        return res.status(404).json({
-          value: req.params.budge_id,
-          msg: "el budge no fue encontrado",
-          param: "budge_id",
-          location: "params",
-        });
-      }
-
-      // Validamos si el mensaje  pertenece a ese presupuesto
-      if (budge.construction_id != budgeMessage.budge_id) {
-        return res.status(404).json({
-          value: req.params.message_id,
-          msg: "el budge_message no fue encontrado",
-          param: "message_id",
-          location: "params",
-        });
-      }
-
-      // Solo los dueños o los clientes de la construccion pueden eliminar los mensajes
-      if (construction.create_by != authUser.id) {
-        return res.status(403).json({
-          msg: "No permitido",
-        });
-      }
+      const { budge_message: budgeMessage } = req;
 
       // Actualizamos el budgeMessage
       await budgeMessage.update({
