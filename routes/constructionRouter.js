@@ -57,7 +57,41 @@ constructionRouter.post(
 );
 
 // GET ALL CONSTRUCTIONS
-// Obtiene todas las construcciones del usuario autenticado
+constructionRouter.get(
+  "/",
+  async (req, res) => {
+    try {
+      // Solo mostramos las construcciones que el usuario a creado o de las cuales es cliente
+      const constructions = await Construction.findAll({
+        where: {
+          status: true,
+        },
+        include: [
+          { model: User, as: "client" },
+          { model: User, as: "creator" },
+        ],
+      });
+
+      //Eliminamos la propiedad contraseña de los usuarios para no enviarla con la response
+      constructions.forEach((construction) => {
+        delete construction.dataValues.creator.dataValues.password;
+        if (construction.dataValues.client) {
+          delete construction.dataValues.client.dataValues.password;
+        }
+      });
+
+      res.status(200).json(constructions);
+    } catch (error) {
+      console.log(error);
+
+      res.status(500).json({
+        msg: "Contacte con el administrador",
+      });
+    }
+  }
+);
+
+// Obtiene todas las construcciones de un usuario
 constructionRouter.get(
   "/user/:user_id",
   [existModelParam(User, "user_id")],
