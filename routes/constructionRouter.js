@@ -57,39 +57,36 @@ constructionRouter.post(
 );
 
 // GET ALL CONSTRUCTIONS
-constructionRouter.get(
-  "/",
-  async (req, res) => {
-    try {
-      // Solo mostramos las construcciones que el usuario a creado o de las cuales es cliente
-      const constructions = await Construction.findAll({
-        where: {
-          status: true,
-        },
-        include: [
-          { model: User, as: "client" },
-          { model: User, as: "creator" },
-        ],
-      });
+constructionRouter.get("/", async (req, res) => {
+  try {
+    // Solo mostramos las construcciones que el usuario a creado o de las cuales es cliente
+    const constructions = await Construction.findAll({
+      where: {
+        status: true,
+      },
+      include: [
+        { model: User, as: "client" },
+        { model: User, as: "creator" },
+      ],
+    });
 
-      //Eliminamos la propiedad contraseña de los usuarios para no enviarla con la response
-      constructions.forEach((construction) => {
-        delete construction.dataValues.creator.dataValues.password;
-        if (construction.dataValues.client) {
-          delete construction.dataValues.client.dataValues.password;
-        }
-      });
+    //Eliminamos la propiedad contraseña de los usuarios para no enviarla con la response
+    constructions.forEach((construction) => {
+      delete construction.dataValues.creator.dataValues.password;
+      if (construction.dataValues.client) {
+        delete construction.dataValues.client.dataValues.password;
+      }
+    });
 
-      res.status(200).json(constructions);
-    } catch (error) {
-      console.log(error);
+    res.status(200).json(constructions);
+  } catch (error) {
+    console.log(error);
 
-      res.status(500).json({
-        msg: "Contacte con el administrador",
-      });
-    }
+    res.status(500).json({
+      msg: "Contacte con el administrador",
+    });
   }
-);
+});
 
 // Obtiene todas las construcciones de un usuario
 constructionRouter.get(
@@ -98,8 +95,6 @@ constructionRouter.get(
   async (req, res) => {
     try {
       const { user } = req;
-
-      console.log(user.id);
 
       // Solo mostramos las construcciones que el usuario a creado o de las cuales es cliente
       const constructions = await Construction.findAll({
@@ -113,6 +108,26 @@ constructionRouter.get(
         ],
       });
 
+      // Separamos las construcciones en las que el es cliente
+      const userConstruction = constructions.filter((construction) => {
+        const clientConstruction = construction.dataValues.client_id;
+        if (clientConstruction === null) return false;
+        if (clientConstruction != user.id) return false;
+
+        return true;
+      });
+
+      // Separamos las construcciones que el ha creado
+      const createdConstruction = constructions.filter((construction) => {
+        const createdConstruction = construction.dataValues.create_by;
+        if (createdConstruction === null) return false;
+        if (createdConstruction != user.id) return false;
+
+        return true;
+      });
+
+
+
       //Eliminamos la propiedad contraseña de los usuarios para no enviarla con la response
       constructions.forEach((construction) => {
         delete construction.dataValues.creator.dataValues.password;
@@ -121,7 +136,7 @@ constructionRouter.get(
         }
       });
 
-      res.status(200).json(constructions);
+      res.status(200).json({ user: userConstruction, created: createdConstruction});
     } catch (error) {
       console.log(error);
 
