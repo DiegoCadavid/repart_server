@@ -26,7 +26,7 @@ constructionViewRouter.get(
   ],
   async (req, res) => {
     try {
-      const { construction, budge } = req;
+      const { budge } = req;
 
       // Obtenemos todas las categorias
       const categories = await CategoryItem.findAll({
@@ -43,6 +43,7 @@ constructionViewRouter.get(
       for (let i = 0; i < categories.length; i++) {
         const category = categories[i];
 
+        // Obtenemos todos los items de la categoria
         const rawItems = await Item.findAll({
           where: {
             status: true,
@@ -56,12 +57,14 @@ constructionViewRouter.get(
           ],
         });
 
+        // items formateados de la categoria
         let formatItems = [];
 
-        // Obtenemos los materiales del producto del item
+        // Obtenemos los materiales de los productos del item
         for (let j = 0; j < rawItems.length; j++) {
           const rawItem = rawItems[j];
 
+          // Obtenemos todos los materiales del producto
           const rawMaterialsProducts = await MaterialProduct.findAll({
             where: {
               status: true,
@@ -75,12 +78,16 @@ constructionViewRouter.get(
             ],
           });
 
-          // Obtenemos el valor total del item
+          // Obtenemos el valor total del item a base del costo de los productos
           let cost = 0;
+
           rawMaterialsProducts.forEach((rawMaterialProduct) => {
             cost +=
               rawMaterialProduct.material.cost * rawMaterialProduct.amount;
           });
+
+          // Le agregamos el valor de la mano de obra
+          cost += rawItem.product.labor_cost;
 
           // Le damos un formato a los valores
           const formatItem = {
@@ -96,11 +103,14 @@ constructionViewRouter.get(
           formatItems.push(formatItem);
         }
 
+
+        // Calculamos el valor del la categoria
         let totalCostCategory = 0;
         let totalLaborCostCategory = 0;
 
         // Obtenemos el valor total de la categoria
         formatItems.forEach((formatItem) => {
+          // El valor de total de la categoria ya contiene la mano de obra porque la sumamos anteriormente en cada item
           totalCostCategory += formatItem.total_cost;
         });
 
@@ -108,7 +118,7 @@ constructionViewRouter.get(
           totalLaborCostCategory += formatItem.labor_cost;
         });
 
-        // Le damos formato a los elementos
+        // Le damos formato a los elementos y los guardamos
         elements.push({
           id: category.id,
           category_name: category.name,
@@ -118,20 +128,9 @@ constructionViewRouter.get(
         });
       }
 
-      // Obtenemos el valor total del presupuesto
-      let totalCostBudge = 0;
-      let totalLaborCostBudge = 0;
-
-      elements.forEach((element) => {
-        totalCostBudge += element.total_cost;
-        totalLaborCostBudge += element.total_labor_cost;
-      });
-
       res.status(200).json({
         id: budge.id,
         name: budge.name,
-        total_cost: totalCostBudge,
-        total_labor_cost: totalLaborCostBudge,
         elements,
       });
     } catch (error) {
@@ -160,6 +159,7 @@ constructionViewRouter.get(
     try {
       const { budge } = req;
 
+      // Obtenemos todos los productos del presupuesto
       const rawProducts = await Product.findAll({
         where: {
           status: true,
@@ -169,9 +169,11 @@ constructionViewRouter.get(
 
       let formatProducts = [];
 
+      // Obtenemos todos los materiales del productos
       for (let i = 0; i < rawProducts.length; i++) {
         const rawProduct = rawProducts[i];
 
+        // Obtenemos todos los materiales del producto "n => n"
         const rawMaterialsProducts = await MaterialProduct.findAll({
           where: {
             status: 1,
@@ -187,6 +189,7 @@ constructionViewRouter.get(
 
         let formatMaterialsProducts = [];
 
+        // le damos formato y guardamos todos los los materiales del producto 
         rawMaterialsProducts.forEach((rawMaterialProduct) => {
           formatMaterialsProducts.push({
             id: rawMaterialProduct.id,
@@ -198,15 +201,20 @@ constructionViewRouter.get(
           });
         });
 
+        // Obtenemos el valor total del producto
         let totalCostProduct = 0;
 
         formatMaterialsProducts.forEach((formatMaterialsProduct) => {
           totalCostProduct += formatMaterialsProduct.total_cost;
         });
 
+        // Le sumamos al valor total el valor de la mano de obra
+        totalCostProduct += rawProduct.labor_cost
+
         formatProducts.push({
           id: rawProduct.id,
           product: rawProduct.name,
+          unit_type: rawProduct.unit_type,
           total_cost: totalCostProduct,
           labor_cost: rawProduct.labor_cost,
           materials: formatMaterialsProducts,
