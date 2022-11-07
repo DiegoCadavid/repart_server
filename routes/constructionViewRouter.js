@@ -263,7 +263,6 @@ constructionViewRouter.get(
         ],
       });
 
-      let total_material_cost = 0;
       let total_labor_cost = 0;
       let total_cost = 0;
 
