@@ -130,11 +130,7 @@ constructionViewRouter.get(
         });
       }
 
-      res.status(200).json({
-        id: budge.id,
-        name: budge.name,
-        elements,
-      });
+      res.status(200).json(elements);
     } catch (error) {
       console.log(error);
 
