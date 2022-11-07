@@ -79,30 +79,34 @@ constructionViewRouter.get(
           });
 
           // Obtenemos el valor total del item a base del costo de los productos
-          let cost = 0;
+          let unit_cost = 0;
 
           rawMaterialsProducts.forEach((rawMaterialProduct) => {
-            cost +=
+            unit_cost +=
               rawMaterialProduct.material.cost * rawMaterialProduct.amount;
           });
 
-          // Le agregamos el valor de la mano de obra
-          cost += rawItem.product.labor_cost;
+          const unit_labor_cost = rawItem.product.labor_cost;      
 
+          // Le sumamos la mano de obra al costo por unidad del producto
+          unit_cost += unit_labor_cost;
+          
+          
           // Le damos un formato a los valores
           const formatItem = {
             id: rawItem.id,
             name: rawItem.product.name,
             amount: rawItem.amount,
             unit_type: rawItem.product.unit_type,
-            cost,
-            total_cost: cost * rawItem.amount,
-            labor_cost: rawItem.product.labor_cost,
+            unit_cost,
+            unit_labor_cost,
+            total_cost: unit_cost * rawItem.amount,
+            total_labor_cost: unit_labor_cost * rawItem.amount,
+            
           };
 
           formatItems.push(formatItem);
         }
-
 
         // Calculamos el valor del la categoria
         let totalCostCategory = 0;
@@ -115,7 +119,7 @@ constructionViewRouter.get(
         });
 
         formatItems.forEach((formatItem) => {
-          totalLaborCostCategory += formatItem.labor_cost;
+          totalLaborCostCategory += formatItem.total_labor_cost;
         });
 
         // Le damos formato a los elementos y los guardamos
@@ -189,7 +193,7 @@ constructionViewRouter.get(
 
         let formatMaterialsProducts = [];
 
-        // le damos formato y guardamos todos los los materiales del producto 
+        // le damos formato y guardamos todos los los materiales del producto
         rawMaterialsProducts.forEach((rawMaterialProduct) => {
           formatMaterialsProducts.push({
             id: rawMaterialProduct.id,
@@ -209,7 +213,7 @@ constructionViewRouter.get(
         });
 
         // Le sumamos al valor total el valor de la mano de obra
-        totalCostProduct += rawProduct.labor_cost
+        totalCostProduct += rawProduct.labor_cost;
 
         formatProducts.push({
           id: rawProduct.id,
