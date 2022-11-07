@@ -4,6 +4,7 @@ const userRouter = express.Router();
 // DEPENDENCES
 const { body } = require("express-validator");
 const bcript = require("bcryptjs");
+const cloudinary = require("cloudinary").v2;
 
 // MIDDLEWARES
 const existUniqueModelFields = require("../middlewares/existUniqueModelFields");
@@ -13,6 +14,7 @@ const validateJWT = require("../middlewares/validateJWT");
 
 // MODELS DB
 const User = require("../models/User");
+const compareAuthUser = require("../middlewares/compareAuthUser");
 
 // CRUD
 // Create
@@ -103,6 +105,7 @@ userRouter.put(
   [
     validateJWT,
     existModelParam(User, "id"),
+    compareAuthUser(User, ["id"]),
     body("name").optional().isString().isLength({ max: 50, min: 5 }),
     body("last_name").optional().isString().isLength({ max: 50, min: 5 }),
     body("email").optional().isEmail(),
@@ -120,12 +123,6 @@ userRouter.put(
   async (req, res) => {
     try {
       const { user, authUser } = req;
-      // Validamos si el usuario autenticado es el mismo que intenta actualizar
-      if (authUser.id != user.id && authUser.role != "admin") {
-        return res.status(403).json({
-          msg: "No permitido",
-        });
-      }
 
       // Si existe la contraseña la incriptamos
       if (req.body?.password) {
@@ -133,11 +130,11 @@ userRouter.put(
       }
 
       // Si la cuenta no la modifica un administrador no puede cambiar los siguientes parametros [role, security_number]
-      if(req.body?.role && authUser.role != "admin") {
+      if (req.body?.role && authUser.role != "admin") {
         delete req.body.role;
       }
-      
-      if(req.body?.security_number && authUser.role != "admin") {
+
+      if (req.body?.security_number && authUser.role != "admin") {
         delete req.body.security_number;
       }
 
@@ -163,16 +160,10 @@ userRouter.put(
 // Delete
 userRouter.delete(
   "/:id",
-  [validateJWT, existModelParam(User, "id")],
+  [validateJWT, existModelParam(User, "id"), compareAuthUser(User, ["id"])],
   async (req, res) => {
     try {
-      const { user, authUser } = req;
-
-      if (authUser.id != user.id && authUser.role != "admin") {
-        return res.status(403).json({
-          msg: "No permitido",
-        });
-      }
+      const { user } = req;
 
       await user.update({ status: false });
       await user.save();
@@ -180,6 +171,130 @@ userRouter.delete(
       //Eliminamos la propiedad contraseña para no enviarla con la response
       delete user.dataValues.password;
       res.status(200).json(user);
+    } catch (error) {
+      console.log(error);
+
+      res.status(500).json({
+        msg: "Contacte con el administrador",
+      });
+    }
+  }
+);
+
+// upload/change photo
+userRouter.post(
+  "/image/:id",
+  [validateJWT, existModelParam(User, "id"), compareAuthUser(User, ["id"])],
+  async (req, res) => {
+    try {
+      const { user, files } = req;
+      delete user.dataValues.password;
+
+      // Realizamos validaciones
+      if (!files?.image || !files) {
+        return res.status(400).json({
+          msg: "Debe de introducir una imagen",
+        });
+      }
+
+      if (files.image.length) {
+        return res.status(400).json({
+          msg: "Solo puede introducir una imagen",
+        });
+      }
+
+      // Subimos la imagen a cloudinary
+      cloudinary.uploader
+        .upload_stream(
+          {
+            folder: `${process.env.CLOUDINARY_ROOT}/users/${user.id}`,
+          },
+          async (error, result) => {
+            if (error) {
+              console.log(error);
+              return res.status(500).json({
+                msg: "Error al subir la imagen, contacte con el administrador",
+              });
+            }
+
+            await user.update({
+              image: result.public_id,
+            });
+
+            await user.save();
+
+            res.status(200).json({
+              url: result.secure_url,
+              id: user.image,
+            });
+          }
+        )
+        .end(files.image.data);
+    } catch (error) {
+      console.log(error);
+
+      res.status(500).json({
+        msg: "Contacte con el administrador",
+      });
+    }
+  }
+);
+
+// get user photo
+userRouter.get(
+  "/image/:id",
+  [existModelParam(User, "id")],
+  async (req, res) => {
+    try {
+      const { user } = req;
+      delete user.dataValues.password;
+
+      // Validamos si el usuario tiene una imagen
+      if (!user.image) {
+        return res.status(200).json({
+          url: "",
+        });
+      }
+
+      // Obtenemos la imagen
+      const result = await cloudinary.api.resource(user.image);
+      res.status(200).json({
+        url: result.secure_url,
+      });
+    } catch (error) {
+      console.log(error);
+
+      res.status(500).json({
+        msg: "Contacte con el administrador",
+      });
+    }
+  }
+);
+
+// delete photo
+userRouter.delete(
+  "/image/:id",
+  [validateJWT, existModelParam(User, "id"), compareAuthUser(User, ["id"])],
+  async (req, res) => {
+    try {
+      const { user } = req;
+
+      if (!user.image) {
+        return res.status(400).json({
+          msg: "El usuario no tiene imagen",
+        });
+      }
+
+      await user.update({
+        image: null 
+      })
+
+      await user.save();
+
+      res.status(200).json({
+        msg: "imagen eliminada"
+      })
+      
     } catch (error) {
       console.log(error);
 

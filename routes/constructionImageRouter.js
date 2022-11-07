@@ -31,7 +31,7 @@ constructionImageRouter.post(
       const { construction, files } = req; // => De aqui sacamos el ID
 
       // Realizamos validaciones
-      if (!files?.image) {
+      if (!files?.image || !files) {
         return res.status(400).json({
           msg: "Debe de introducir una imagen",
         });
