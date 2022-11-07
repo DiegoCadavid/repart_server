@@ -86,12 +86,11 @@ constructionViewRouter.get(
               rawMaterialProduct.material.cost * rawMaterialProduct.amount;
           });
 
-          const unit_labor_cost = rawItem.product.labor_cost;      
+          const unit_labor_cost = rawItem.product.labor_cost;
 
           // Le sumamos la mano de obra al costo por unidad del producto
           unit_cost += unit_labor_cost;
-          
-          
+
           // Le damos un formato a los valores
           const formatItem = {
             id: rawItem.id,
@@ -102,7 +101,6 @@ constructionViewRouter.get(
             unit_labor_cost,
             total_cost: unit_cost * rawItem.amount,
             total_labor_cost: unit_labor_cost * rawItem.amount,
-            
           };
 
           formatItems.push(formatItem);
@@ -226,6 +224,93 @@ constructionViewRouter.get(
       }
 
       res.status(200).json(formatProducts);
+    } catch (error) {
+      console.log(error);
+
+      res.status(500).json({
+        msg: "Contacte con el administrador",
+      });
+    }
+  }
+);
+
+constructionViewRouter.get(
+  "/:construction_id/view/cost/budge/:budge_id",
+  [
+    validateJWT,
+    existModelParam(Construction, "construction_id"),
+    existModelParam(Budge, "budge_id"),
+    compareModels(
+      { Model: Budge, key: "construction_id" },
+      { Model: Construction, key: "id" }
+    ),
+    compareAuthUser(Construction, ["create_by", "client_id"]),
+  ],
+  async (req, res) => {
+    try {
+      const { budge } = req;
+
+      const items = await Item.findAll({
+        where: {
+          status: true,
+          budge_id: budge.id,
+        },
+        include: [
+          {
+            model: Product,
+            as: "product",
+          },
+        ],
+      });
+
+      let total_material_cost = 0;
+      let total_labor_cost = 0;
+      let total_cost = 0;
+
+      // Con el item product tenemos el valor de la mano ( por unidad del item )
+      for (let i = 0; i < items.length; i++) {
+        // Nesesitamos obtener el valor de cada item del presupuesto
+        const item = items[i];
+
+        // Obtenemos los materiales de ese producto
+        const materialProducts = await MaterialProduct.findAll({
+          where: {
+            status: true,
+            product_id: item.product.id,
+          },
+          include: [
+            {
+              model: Material,
+              as: "material",
+            },
+          ],
+        });
+
+        // Obtenemos el valor del producto a base de todos los materiales
+        let productCost = 0;
+
+        // Le sumamos la mano de obra al costo del producto
+        productCost += item.dataValues.product.labor_cost;
+        total_labor_cost += item.dataValues.product.labor_cost * item.dataValues.amount;
+
+        // Le sumamos al costo del producto el valor de sus materiales
+        for (let j = 0; j < materialProducts.length; j++) {
+          const materialProduct = materialProducts[j];
+          const materialCost =
+            materialProduct.dataValues.material.dataValues.cost;
+
+          productCost += materialCost * materialProduct.dataValues.amount;
+        }
+
+
+        total_cost += productCost * item.dataValues.amount;
+      }
+
+      res.status(200).json({
+        total_material_cost: total_cost - total_labor_cost,
+        total_labor_cost,
+        total_cost,
+      });
     } catch (error) {
       console.log(error);
 
