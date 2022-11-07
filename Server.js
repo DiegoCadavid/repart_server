@@ -20,14 +20,18 @@ class Server {
   }
 
   routes() {
+    // Rutas para el usuario
     this.app.use("/auth", require("./routes/authRouter"));
     this.app.use("/user", require("./routes/userRouter"));
 
+    // Rutas para los materiales
     this.app.use('/material', require('./routes/materialRouter'));
 
+    // Rutas para las construcciones
     this.app.use("/construction", require("./routes/constructionRouter"));
     this.app.use("/construction", require("./routes/constructionImageRouter"));
 
+    // Rutas secundarias para las construcciones
     this.app.use("/construction", require("./routes/constructionBudgeRouter"));
     this.app.use("/construction", require("./routes/constructionBudgeCategoryRouter"));
     this.app.use("/construction", require("./routes/constructionBudgeMessageRouter"));
