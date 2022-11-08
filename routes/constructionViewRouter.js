@@ -192,6 +192,7 @@ constructionViewRouter.get(
           formatMaterialsProducts.push({
             id: rawMaterialProduct.id,
             name: rawMaterialProduct.material.name,
+            unit_type: rawMaterialProduct.material.unit_type,
             amount: rawMaterialProduct.amount,
             cost: rawMaterialProduct.material.cost,
             total_cost:
