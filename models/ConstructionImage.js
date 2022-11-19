@@ -1,6 +1,6 @@
 const { DataTypes } = require("sequelize");
 const db = require("../database/connection");
-const configModel = require("./configModels");
+const {modelSync} = require("./configModels");
 const Construction = require("./Construction");
 
 const ConstructionImage = db.define(
@@ -31,11 +31,7 @@ const ConstructionImage = db.define(
   }
 );
 
-ConstructionImage.sync(configModel).then( () => {
-  console.log(` > ConstructionImage sincronizado con la base de datos`);
-}).catch( () => {
-  console.log(` > Error al sincronizar ConstructionImage con la base de datos`);
-})
+modelSync(ConstructionImage);
 
 
 module.exports = ConstructionImage;

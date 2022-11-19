@@ -4,7 +4,7 @@ const db = require("../database/connection");
 const User = require("./User");
 const ConstructionImage = require("./ConstructionImage");
 
-const configModel = require("./configModels");
+const {modelSync} = require("./configModels");
 
 const Construction = db.define(
   "Construction",
@@ -72,10 +72,7 @@ Construction.belongsTo(ConstructionImage, {
   as: "header"
 })
 
-Construction.sync(configModel).then( () => {
-  console.log(` > Construction sincronizado con la base de datos`);
-}).catch( () => {
-  console.log(` > Error al sincronizar Construction con la base de datos`);
-})
+modelSync(Construction);
+
 
 module.exports = Construction;

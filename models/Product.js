@@ -1,7 +1,7 @@
 const { DataTypes } = require("sequelize");
 const db = require("../database/connection");
 const Budge = require("./Budge");
-const configModel = require("./configModels");
+const { modelSync } = require("./configModels");
 
 const Product = db.define(
   "product",
@@ -41,10 +41,6 @@ Product.belongsTo(Budge, {
   as: "budge",
 });
 
-Product.sync(configModel).then( () => {
-  console.log(` > Product sincronizado con la base de datos`);
-}).catch( () => {
-  console.log(` > Error al sincronizar Product con la base de datos`);
-})
+modelSync(Product);
 
 module.exports = Product;

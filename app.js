@@ -1,4 +1,5 @@
 require('dotenv').config();
+require('colors');
 
 const Server = require('./Server');
 
