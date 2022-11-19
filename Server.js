@@ -47,7 +47,7 @@ class Server {
   async connectDB() {
     try {
       await db.authenticate();
-      console.log("Base de datos conectada");
+      console.log("Base de datos conectada".yellow);
     } catch (error) {
       throw new Error(error);
     }
@@ -74,7 +74,7 @@ class Server {
 
   init() {
     this.app.listen(this.port, () => {
-      console.log(`\nServidor corriendo el puerto ${this.port}`);
+      console.log(`\nServidor corriendo el puerto ${this.port}`.yellow);
     });
   }
 }
