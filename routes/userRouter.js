@@ -65,10 +65,38 @@ userRouter.get("/", async (req, res) => {
         status: true,
       },
     });
+
     users.forEach((user) => {
       //Eliminamos la propiedad contraseña para no enviarla con la response
       delete user.dataValues.password;
       return user;
+    });
+
+    // Obtenemos las id de las imagenes de los usuarios
+    const imagesId = users
+      .map((user) => {
+        return user.dataValues.image;
+      })
+      .filter((image) => image);
+
+    // Obtenemos las url de las imagenes
+    const images = (
+      await cloudinary.api.resources_by_ids(imagesId)
+    ).resources.map((resource) => {
+      return {
+        id: resource.public_id,
+        url: resource.secure_url,
+      };
+    });
+
+    // Le asignamos las imagenes a los usuarios
+    users.forEach((user) => {
+      const userImage = images.find(
+        (image) => user.dataValues.image == image.id
+      );
+      if (userImage) {
+        user.dataValues.image_url = userImage.url;
+      }
     });
 
     res.status(200).json(users);
@@ -82,12 +110,18 @@ userRouter.get("/", async (req, res) => {
 });
 
 // Read by id
-userRouter.get("/:id", [existModelParam(User, "id")], (req, res) => {
+userRouter.get("/:id", [existModelParam(User, "id")], async (req, res) => {
   try {
     const { user } = req;
 
     //Eliminamos la propiedad contraseña para no enviarla con la response
     delete user.dataValues.password;
+
+    const imageId = user.image;
+    if (imageId) {
+      const imageUrl = await cloudinary.api.resource(imageId);
+      user.dataValues.image_url = imageUrl.secure_url;
+    }
 
     res.status(200).json(user);
   } catch (error) {
@@ -144,6 +178,13 @@ userRouter.put(
 
       //Eliminamos la propiedad contraseña para no enviarla con la response
       delete user.dataValues.password;
+
+      // Obtenemos la imagen del usuario
+      const imageId = user.image;
+      if (imageId) {
+        const imageUrl = await cloudinary.api.resource(imageId);
+        user.dataValues.image_url = imageUrl.secure_url;
+      }
 
       // Enviamos una respuesta
       res.status(200).json(user);
@@ -286,15 +327,14 @@ userRouter.delete(
       }
 
       await user.update({
-        image: null 
-      })
+        image: null,
+      });
 
       await user.save();
 
       res.status(200).json({
-        msg: "imagen eliminada"
-      })
-      
+        msg: "imagen eliminada",
+      });
     } catch (error) {
       console.log(error);
 
