@@ -41,4 +41,11 @@ Material.belongsTo(User, {
   as: "creator",
 });
 
+Material.sync().then( () => {
+  console.log(` > Material sincronizado con la base de datos`);
+}).catch( () => {
+  console.log(` > Error al sincronizar Material con la base de datos`);
+})
+
+
 module.exports = Material;

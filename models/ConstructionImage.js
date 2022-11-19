@@ -30,4 +30,11 @@ const ConstructionImage = db.define(
   }
 );
 
+ConstructionImage.sync().then( () => {
+  console.log(` > ConstructionImage sincronizado con la base de datos`);
+}).catch( () => {
+  console.log(` > Error al sincronizar ConstructionImage con la base de datos`);
+})
+
+
 module.exports = ConstructionImage;

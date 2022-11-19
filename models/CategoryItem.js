@@ -34,4 +34,10 @@ CategoryItem.belongsTo(Budge,{
   as: "budge"
 })
 
+CategoryItem.sync().then( () => {
+  console.log(` > CategoryItem sincronizado con la base de datos`);
+}).catch( () => {
+  console.log(` > Error al sincronizar CategoryItem con la base de datos`);
+})
+
 module.exports = CategoryItem;

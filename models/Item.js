@@ -61,4 +61,10 @@ Item.belongsTo(CategoryItem, {
   as: "category",
 });
 
+Item.sync().then( () => {
+  console.log(` > Item sincronizado con la base de datos`);
+}).catch( () => {
+  console.log(` > Error al sincronizar Item con la base de datos`);
+})
+
 module.exports = Item;

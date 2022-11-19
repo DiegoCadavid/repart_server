@@ -34,4 +34,11 @@ BudgeMessage.belongsTo(Budge,{
   as: "budge"
 })
 
+BudgeMessage.sync().then( () => {
+  console.log(` > BudgeMessage sincronizado con la base de datos`);
+}).catch( () => {
+  console.log(` > Error al sincronizar BudgeMessage con la base de datos`);
+})
+
+
 module.exports = BudgeMessage;

@@ -33,4 +33,11 @@ Budge.belongsTo(Construction, {
   as: "construction",
 });
 
+Budge.sync().then( () => {
+  console.log(` > Budge sincronizado con la base de datos`);
+}).catch( () => {
+  console.log(` > Error al sincronizar budge con la base de datos`);
+})
+
+
 module.exports = Budge;

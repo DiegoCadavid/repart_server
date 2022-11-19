@@ -54,6 +54,7 @@ const Construction = db.define(
   }
 );
 
+
 Construction.belongsTo(User, {
   foreignKey: 'client_id',
   as: "client"
@@ -67,6 +68,12 @@ Construction.belongsTo(User,{
 Construction.belongsTo(ConstructionImage, {
   foreignKey: "header_id",
   as: "header"
+})
+
+Construction.sync().then( () => {
+  console.log(` > Construction sincronizado con la base de datos`);
+}).catch( () => {
+  console.log(` > Error al sincronizar Construction con la base de datos`);
 })
 
 module.exports = Construction;

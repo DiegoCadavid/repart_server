@@ -49,4 +49,10 @@ MaterialProduct.belongsTo(Product,{
   as: "product"
 })
 
+MaterialProduct.sync().then( () => {
+  console.log(` > MaterialProduct sincronizado con la base de datos`);
+}).catch( () => {
+  console.log(` > Error al sincronizar MaterialProduct con la base de datos`);
+})
+
 module.exports = MaterialProduct;

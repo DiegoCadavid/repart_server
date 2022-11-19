@@ -40,4 +40,10 @@ Product.belongsTo(Budge, {
   as: "budge",
 });
 
+Product.sync().then( () => {
+  console.log(` > Product sincronizado con la base de datos`);
+}).catch( () => {
+  console.log(` > Error al sincronizar Product con la base de datos`);
+})
+
 module.exports = Product;

@@ -60,4 +60,10 @@ const User = db.define(
   }
 );
 
+User.sync().then( () => {
+  console.log(` > User sincronizado con la base de datos`);
+}).catch( () => {
+  console.log(` > Error al sincronizar User con la base de datos`);
+})
+
 module.exports = User;
