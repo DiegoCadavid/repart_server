@@ -1,5 +1,6 @@
 const { DataTypes } = require("sequelize");
 const db = require("../database/connection");
+const configModel = require("./configModels");
 const Construction = require("./Construction");
 
 const Budge = db.define(
@@ -33,7 +34,7 @@ Budge.belongsTo(Construction, {
   as: "construction",
 });
 
-Budge.sync().then( () => {
+Budge.sync(configModel).then( () => {
   console.log(` > Budge sincronizado con la base de datos`);
 }).catch( () => {
   console.log(` > Error al sincronizar budge con la base de datos`);

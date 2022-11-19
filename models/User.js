@@ -1,5 +1,6 @@
 const { DataTypes } = require("sequelize");
 const db = require("../database/connection");
+const configModel = require("./configModels");
 
 const User = db.define(
   "User",
@@ -60,7 +61,7 @@ const User = db.define(
   }
 );
 
-User.sync().then( () => {
+User.sync(configModel).then( () => {
   console.log(` > User sincronizado con la base de datos`);
 }).catch( () => {
   console.log(` > Error al sincronizar User con la base de datos`);

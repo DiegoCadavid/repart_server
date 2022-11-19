@@ -1,5 +1,6 @@
 const { DataTypes } = require("sequelize");
 const db = require("../database/connection");
+const configModel = require("./configModels");
 const User = require("./User");
 
 const Material = db.define(
@@ -41,7 +42,7 @@ Material.belongsTo(User, {
   as: "creator",
 });
 
-Material.sync().then( () => {
+Material.sync(configModel).then( () => {
   console.log(` > Material sincronizado con la base de datos`);
 }).catch( () => {
   console.log(` > Error al sincronizar Material con la base de datos`);

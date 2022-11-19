@@ -1,6 +1,7 @@
 const { DataTypes } = require("sequelize");
 const db = require("../database/connection");
 const Budge = require("./Budge");
+const configModel = require("./configModels");
 
 const BudgeMessage = db.define(
   "budge_message",
@@ -34,7 +35,7 @@ BudgeMessage.belongsTo(Budge,{
   as: "budge"
 })
 
-BudgeMessage.sync().then( () => {
+BudgeMessage.sync(configModel).then( () => {
   console.log(` > BudgeMessage sincronizado con la base de datos`);
 }).catch( () => {
   console.log(` > Error al sincronizar BudgeMessage con la base de datos`);

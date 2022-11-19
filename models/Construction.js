@@ -1,7 +1,10 @@
 const { DataTypes } = require("sequelize");
 const db = require("../database/connection");
+
 const User = require("./User");
 const ConstructionImage = require("./ConstructionImage");
+
+const configModel = require("./configModels");
 
 const Construction = db.define(
   "Construction",
@@ -54,7 +57,6 @@ const Construction = db.define(
   }
 );
 
-
 Construction.belongsTo(User, {
   foreignKey: 'client_id',
   as: "client"
@@ -70,7 +72,7 @@ Construction.belongsTo(ConstructionImage, {
   as: "header"
 })
 
-Construction.sync().then( () => {
+Construction.sync(configModel).then( () => {
   console.log(` > Construction sincronizado con la base de datos`);
 }).catch( () => {
   console.log(` > Error al sincronizar Construction con la base de datos`);

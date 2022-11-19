@@ -4,6 +4,7 @@ const db = require("../database/connection");
 const Product = require("./Product");
 const Budge = require("./Budge");
 const CategoryItem = require("./CategoryItem");
+const configModel = require("./configModels");
 
 const Item = db.define(
   "item",
@@ -61,7 +62,7 @@ Item.belongsTo(CategoryItem, {
   as: "category",
 });
 
-Item.sync().then( () => {
+Item.sync(configModel).then( () => {
   console.log(` > Item sincronizado con la base de datos`);
 }).catch( () => {
   console.log(` > Error al sincronizar Item con la base de datos`);
