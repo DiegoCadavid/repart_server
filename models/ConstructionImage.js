@@ -30,9 +30,4 @@ const ConstructionImage = db.define(
   }
 );
 
-ConstructionImage.belongsTo(Construction,{
-  foreignKey: "construction_id",
-  as: "construction"
-})
-
 module.exports = ConstructionImage;
